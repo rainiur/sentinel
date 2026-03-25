@@ -20,15 +20,22 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-          cache-dependency-path: apps/api/requirements-dev.txt
+          cache-dependency-path: |
+            apps/api/requirements-dev.txt
+            apps/worker/requirements-dev.txt
       - name: Install dependencies
-        run: pip install -r apps/api/requirements-dev.txt
+        run: |
+          pip install -r apps/api/requirements-dev.txt
+          pip install -r apps/worker/requirements-dev.txt
       - name: Ruff check
         run: ruff check apps/api apps/worker
       - name: Ruff format
         run: ruff format apps/api apps/worker --check
-      - name: Pytest
+      - name: Pytest API
         working-directory: apps/api
+        run: pytest -q
+      - name: Pytest worker
+        working-directory: apps/worker
         run: pytest -q
 
   web:

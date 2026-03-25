@@ -130,7 +130,13 @@ npm run dev
 ```
 
 **API unit tests (host)** (with `.venv` activated): `cd apps/api && pytest`
+
+**Worker unit tests (host):** `pip install -r apps/worker/requirements-dev.txt && cd apps/worker && pytest`
+
 Use **Python 3.12** in `.venv` when possible; **3.10+** is the declared minimum.
+
+**Enqueue a test job (Redis CLI):** with Compose Redis on host port **30379** (default), e.g.
+`redis-cli -p 30379 LPUSH sentinel:jobs '{"type":"ping","job_id":"cli-1","correlation_id":"manual"}'` — the worker container logs **`job_ping`**.
 
 ### Lint / hooks (same venv)
 

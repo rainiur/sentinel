@@ -5,7 +5,7 @@
 As of the last doc sync with the repo:
 
 - **API** (FastAPI): Serves REST endpoints; uses **Postgres** when `DATABASE_URL` is set (Docker Compose sets this), otherwise **in-memory** stores for local/tests. SQLAlchemy provides the **engine**; persistence uses **SQLAlchemy Core** (`text()`), not ORM models yet. Emits structured JSON log lines for selected events.
-- **Worker**: Long-running process with periodic heartbeat; **redacted** DB/Redis URLs in logs; **ping** to Redis only—no job queue consumer yet.
+- **Worker**: Long-running process; **BRPOP** on Redis list **`sentinel:jobs`** (JSON jobs: **`noop`**, **`ping`**); periodic heartbeat; **redacted** DB/Redis URLs in logs. Ingest/embeddings/sub-agent job types not implemented yet.
 - **Web**: Next.js App Router; **production image** uses standalone output. Browser calls API via `NEXT_PUBLIC_API_BASE_URL` (Compose defaults to host port **30880**).
 - **Compose**: Internal service DNS (`postgres`, `redis`, `minio`); **published host ports** are configurable via `infra/docker/.env` to avoid clashes with local software.
 

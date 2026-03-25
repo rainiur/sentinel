@@ -38,8 +38,9 @@ Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`*
 - [ ] Add retention jobs for artifacts and logs
 
 ## 2b. Worker service
-- [ ] Replace heartbeat stub with Redis-backed queue consumer and job types (ingest, embeddings, clustering, etc.)
-- [x] Worker uses Redis client for connectivity check; dependencies declared — Completed: 2026-03-26 (full job processing still TODO)
+- [x] Redis-backed queue consumer: **BRPOP** on **`SENTINEL_JOB_QUEUE`** (default `sentinel:jobs`), JSON jobs with **`noop`** / **`ping`** types; periodic heartbeat — Completed: 2026-03-26
+- [ ] Add job types for ingest, embeddings, clustering, and sub-agent steps; API or internal producer to **LPUSH** jobs
+- [x] Worker uses Redis client; dependencies declared — Completed: 2026-03-26
 
 ## 3. Caido integration
 - [ ] Create plugin manifest and config (expand beyond skeleton)

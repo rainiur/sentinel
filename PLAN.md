@@ -206,7 +206,7 @@ The repo is a **runnable stack** (Docker Compose, Postgres init schema, API with
 
 - **Security / M1**: **JWT (HS256) + analyst RBAC** on `/api/*`, **audit** middleware (`audit_http`, correlation id), and **scope manifest** checks on mutating routes are implemented; **OIDC/JWKS**, persisted audit store, and **policy engine** are still open.
 - **Data layer**: No Alembic (or equivalent) migrations; schema evolves via `postgres_schema.sql` + manual changes; row-level security and retention jobs not implemented.
-- **Worker**: No Redis-backed job consumer or real ingestion/embeddings/clustering pipelines.
+- **Worker**: **Redis BRPOP** consumer for JSON jobs (`noop`, `ping`) on **`sentinel:jobs`**; no ingestion/embeddings/clustering job types or API producer yet.
 - **Caido bridge**: Plugin remains TODO stubs (no signed sync to API).
 - **Frontend**: Beyond home + API health check, no dashboard, projects CRUD UI, or analyst workflows.
 - **Object storage**: MinIO wired in compose; API does not yet store evidence bundles in S3-compatible storage.
