@@ -1,6 +1,6 @@
 # Sentinel for Caido - Build Package
 
-**Last updated:** 2026-03-25
+**Last updated:** 2026-03-26
 
 This package is a starter blueprint and implementation scaffold for a **human-governed, scope-bound web security testing assistant** centered on **Caido**, with a planned **sub-agent** layer that can invoke **allowlisted MCP tools** for testing and evidence workflows under policy and audit (see **`PLAN.md`**).
 
