@@ -1,0 +1,211 @@
+openapi: 3.1.0
+info:
+  title: Sentinel for Caido API
+  version: 0.1.0
+  description: |
+    HTTP API contract. Default Docker Compose base URL uses host port 30880 (see infra/docker/.env.example).
+    Implementation status and backlog are tracked in TASKS.md and PLAN.md; not all security controls are implemented yet.
+servers:
+  - url: http://localhost:30880
+    description: Docker Compose default (see infra/docker/.env.example)
+  - url: http://localhost:8080
+    description: Local uvicorn without Docker
+paths:
+  /health:
+    get:
+      summary: Health check
+      responses:
+        '200':
+          description: OK
+  /ready:
+    get:
+      summary: Readiness check (database connectivity when DATABASE_URL is set)
+      responses:
+        '200':
+          description: Ready or running without database
+        '503':
+          description: Database configured but unreachable
+  /api/version:
+    get:
+      summary: API version and service name
+      responses:
+        '200':
+          description: OK
+  /api/projects:
+    post:
+      summary: Create project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProjectRequest'
+      responses:
+        '201':
+          description: Created
+  /api/projects/{project_id}:
+    get:
+      summary: Get project by ID
+      parameters:
+        - in: path
+          name: project_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+        '404':
+          description: Not found
+  /api/sync/requests:
+    post:
+      summary: Ingest normalized requests from Caido bridge
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequestSyncPayload'
+      responses:
+        '202':
+          description: Accepted
+  /api/sync/findings:
+    post:
+      summary: Ingest findings from Caido bridge
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FindingSyncPayload'
+      responses:
+        '202':
+          description: Accepted
+  /api/projects/{project_id}/surface:
+    get:
+      summary: Get surface map
+      parameters:
+        - in: path
+          name: project_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+  /api/hypotheses/generate:
+    post:
+      summary: Generate bounded hypotheses
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HypothesisGenerationRequest'
+      responses:
+        '202':
+          description: Accepted
+  /api/hypotheses/{hypothesis_id}/approve:
+    post:
+      summary: Approve a hypothesis for execution as a bounded template
+      parameters:
+        - in: path
+          name: hypothesis_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Approved
+  /api/feedback:
+    post:
+      summary: Record analyst feedback
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedbackRequest'
+      responses:
+        '201':
+          description: Created
+components:
+  schemas:
+    CreateProjectRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        owner_team:
+          type: string
+    RequestItem:
+      type: object
+      required: [caido_request_id, method, url, host, path]
+      properties:
+        caido_request_id:
+          type: string
+        method:
+          type: string
+        url:
+          type: string
+        host:
+          type: string
+        path:
+          type: string
+        status_code:
+          type: integer
+        req_headers_json:
+          type: object
+        resp_headers_json:
+          type: object
+    RequestSyncPayload:
+      type: object
+      required: [project_id, requests]
+      properties:
+        project_id:
+          type: string
+          format: uuid
+        requests:
+          type: array
+          items:
+            $ref: '#/components/schemas/RequestItem'
+    FindingSyncPayload:
+      type: object
+      required: [project_id, findings]
+      properties:
+        project_id:
+          type: string
+          format: uuid
+        findings:
+          type: array
+          items:
+            type: object
+    HypothesisGenerationRequest:
+      type: object
+      required: [project_id]
+      properties:
+        project_id:
+          type: string
+          format: uuid
+        max_results:
+          type: integer
+          default: 10
+    FeedbackRequest:
+      type: object
+      required: [object_type, object_id, feedback_type, user_id]
+      properties:
+        object_type:
+          type: string
+        object_id:
+          type: string
+          format: uuid
+        feedback_type:
+          type: string
+        user_id:
+          type: string
+        notes:
+          type: string

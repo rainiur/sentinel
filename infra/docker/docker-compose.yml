@@ -1,0 +1,96 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: sentinel-postgres
+    environment:
+      POSTGRES_DB: sentinel
+      POSTGRES_USER: sentinel
+      POSTGRES_PASSWORD: sentinel
+    ports:
+      - "${SENTINEL_POSTGRES_PORT:-30432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../../schemas/postgres_schema.sql:/docker-entrypoint-initdb.d/001-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sentinel -d sentinel"]
+      interval: 3s
+      timeout: 5s
+      retries: 15
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    container_name: sentinel-redis
+    ports:
+      - "${SENTINEL_REDIS_PORT:-30379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 3s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: minio/minio:latest
+    container_name: sentinel-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio123
+    ports:
+      - "${SENTINEL_MINIO_API_PORT:-30900}:9000"
+      - "${SENTINEL_MINIO_CONSOLE_PORT:-30901}:9001"
+    volumes:
+      - minio_data:/data
+
+  api:
+    build:
+      context: ../../apps/api
+    container_name: sentinel-api
+    environment:
+      DATABASE_URL: postgresql+psycopg://sentinel:sentinel@postgres:5432/sentinel
+      REDIS_URL: redis://redis:6379/0
+      S3_ENDPOINT: http://minio:9000
+      S3_BUCKET: sentinel-artifacts
+      S3_ACCESS_KEY: minio
+      S3_SECRET_KEY: minio123
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_started
+    ports:
+      - "${SENTINEL_API_PORT:-30880}:8080"
+
+  worker:
+    build:
+      context: ../../apps/worker
+    container_name: sentinel-worker
+    environment:
+      DATABASE_URL: postgresql+psycopg://sentinel:sentinel@postgres:5432/sentinel
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ../../apps/web
+      target: runner
+      args:
+        NEXT_PUBLIC_API_BASE_URL: ${SENTINEL_BROWSER_API_URL:-http://localhost:${SENTINEL_API_PORT:-30880}}
+    container_name: sentinel-web
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: ${SENTINEL_BROWSER_API_URL:-http://localhost:${SENTINEL_API_PORT:-30880}}
+    depends_on:
+      api:
+        condition: service_started
+    ports:
+      - "${SENTINEL_WEB_PORT:-30700}:3000"
+
+volumes:
+  postgres_data:
+  minio_data:

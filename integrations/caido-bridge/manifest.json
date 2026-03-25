@@ -1,0 +1,7 @@
+{
+  "name": "sentinel-caido-bridge",
+  "version": "0.1.0",
+  "description": "Bridge plugin for syncing Caido artifacts with Sentinel",
+  "author": "OpenAI",
+  "license": "MIT"
+}

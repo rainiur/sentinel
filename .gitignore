@@ -1,0 +1,37 @@
+# Secrets and local env (do not use `.env.*` — that would ignore `.env.example`)
+.env
+.env.local
+.env.*.local
+infra/docker/.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+*.egg-info/
+.eggs/
+dist/
+build/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node
+node_modules/
+.next/
+out/
+npm-debug.log*
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Misc
+*.log
