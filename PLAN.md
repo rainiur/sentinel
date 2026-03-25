@@ -54,34 +54,43 @@ The platform must remain:
    - project binding, evidence export, findings sync, workflow triggers
 
 9. **Orchestration / sub-agent runtime** (planned)
-   - coordinates specialized agents (surface, hypotheses, evidence, research, reporting)
-   - does **not** call MCP tools directly without passing through policy and (where required) human approval
-   - records agent plans, tool selections, and outcomes for audit and replay analysis
+   - coordinates **two kinds** of sub-agents: **MCP server sub-agents** (one per configured `mcpServers` entry—see below) and **domain sub-agents** (surface, hypotheses, evidence, research, reporting—mostly retrieval + reasoning, may *invoke* MCP sub-agents when needed)
+   - MCP traffic never bypasses policy, scope, or (where required) human approval
+   - records per-agent plans, tool selections, and outcomes for audit and replay analysis
 
 10. **MCP tool plane** (planned)
-   - **allowlisted** MCP servers and tools per project or environment (deny-by-default)
+   - each entry in **`mcpServers`** (`SENTINEL_MCP_CONFIG`) corresponds to **one sub-agent** bound to that server’s tool surface (its own allowlist slice, limits, and audit stream)
+   - **allowlisted** tools per server per project or environment (deny-by-default)
    - credentials and endpoints supplied via secure config (vault / env), never from model text
-   - timeouts, concurrency limits, and rate limits per tool family
+   - timeouts, concurrency limits, and rate limits per **server** / tool family
    - normalization of tool **inputs** (scope checks) and **outputs** (storage in evidence / retrieval with redaction)
 
-### Reference MCP inventory (intended lab)
+### Reference MCP inventory and runtime config
 
-**Source checkouts** (build, Cursor MCP config, and upstream behavior live here; paths are the primary dev layout under Nextcloud—other machines should map the same **logical** servers via env):
+**Source checkouts** (build and Cursor/editor MCP config live here; optional reference layout):
 
-| Role | Path |
-|------|------|
+| Role | Example path |
+|------|----------------|
 | Pentesting-oriented MCP server(s) | `/Users/davidwalden/Nextcloud/Programs/MCP/pentesting` |
 | SearXNG (Docker) MCP | `/Users/davidwalden/Nextcloud/Programs/MCP/searxng-docker` |
 | SSH MCP | `/Users/davidwalden/Nextcloud/Programs/MCP/ssh-mcp-server` |
 | Playwright MCP | `/Users/davidwalden/Nextcloud/Programs/MCP/playwright-mcp` |
 
-**Runtime:** these MCP endpoints are expected on LAN host **`192.168.8.70`**. Per-server **ports and transports** (stdio vs HTTP vs SSE, etc.) are defined by each project’s deployment—Sentinel must consume them only through **documented env/config** (e.g. `SENTINEL_MCP_LAB_HOST` plus future per-server URL keys), never hard-coded in application logic. SSH and browser automation tools remain **high risk**: keep them behind policy, allowlists, and approvals as in *Guardrails*.
+**Runtime (no single “MCP host”):** Sentinel reads a **JSON config file** pointed to by **`SENTINEL_MCP_CONFIG`**, using the same top-level shape as **Cursor’s `mcp.json`**: an **`mcpServers`** object whose keys are **server names** (and **sub-agent names**—one sub-agent per key) and whose values describe each server (**`command` / `args` / `env`** for stdio, and/or **`url` / `headers`** for remote HTTP/SSE—exact transport per upstream). Copy **`config/mcp.example.json`** to **`config/mcp.json`** (gitignored), or reuse/merge entries from your Cursor config; keep **secrets** in env or headers supplied by the environment, not committed. The API/worker load this path when the MCP client is implemented. SSH and Playwright tool families remain **high risk**: policy, allowlists, and approvals as in *Guardrails*.
 
 ---
 
 ## Agent model
 
-Sub-agents are **bounded workers** (prompt + tools + retrieval) that operate under the same guardrails as the rest of the platform. They may invoke **MCP tools** only through the governed MCP plane. Examples of roles:
+Sub-agents are **bounded workers** (prompt + optional tools + retrieval) under the same guardrails as the rest of the platform.
+
+### MCP server sub-agents (1:1 with config)
+
+Each key under **`mcpServers`** in **`SENTINEL_MCP_CONFIG`** is treated as **one sub-agent**: that agent’s only MCP tools come from **that** server (e.g. `pentesting`, `searxng`, `playwright`). The orchestrator or a domain agent may **delegate** a task to a named MCP sub-agent; policy and allowlists are evaluated **per server/sub-agent**. High-risk servers (SSH, browser automation) get stricter gates. Domain agents do **not** open ad hoc connections to arbitrary MCP endpoints—they route through these named MCP sub-agents.
+
+### Domain sub-agents (product logic; may call MCP sub-agents)
+
+These focus on Sentinel/Caido semantics and retrieval; they **invoke** MCP server sub-agents when a task needs that server’s tools.
 
 ### Surface Mapper
 Produces endpoint, parameter, auth-context, and route summaries.
@@ -101,8 +110,8 @@ Creates technical and executive-facing findings drafts.
 ### Learning Governor
 Promotes improvements only through reviewed feedback and offline evaluation.
 
-### Tool-using test agents (MCP-backed)
-Specialized agents that propose **read-only** or **pre-approved** MCP calls (e.g. fetch issue details, run a scoped scan, drive a browser session) strictly within the **scope manifest** and **tool allowlist**. State-changing or high-risk tool use requires the same approval path as any other non-read-only action.
+### Delegation pattern
+A domain agent (or the orchestrator) proposes **read-only** or **pre-approved** work **to a specific MCP sub-agent** (by `mcpServers` name), strictly within the **scope manifest** and **tool allowlist** for that server. State-changing or high-risk tool use uses the same approval path as any other non-read-only action.
 
 ---
 
@@ -116,7 +125,7 @@ Specialized agents that propose **read-only** or **pre-approved** MCP calls (e.g
 - External research is source-allowlisted and curated
 - No direct promotion of live behavior from raw learning outputs
 - **MCP**: only **allowlisted** servers/tools; no dynamic subscription to arbitrary MCP endpoints from model output; **secrets** for MCP auth live outside prompts; **log and retain** tool name, arguments (redacted), correlation id, and outcome for audit
-- **Sub-agents** cannot expand scope or bypass Caido/API policy; Caido remains the anchor for proxy-native traffic and operator context
+- **Sub-agents** (domain and MCP server–scoped) cannot expand scope or bypass Caido/API policy; Caido remains the anchor for proxy-native traffic and operator context
 
 ---
 
@@ -156,7 +165,7 @@ Candidate becomes active only after:
 - Evidence clustering
 - Approval queue
 - Draft report generation
-- **MCP foundation (read-only first)**: registry of allowed MCP servers/tools per project; worker or API-side **MCP client** with timeouts; audit log schema for tool calls; at least one **pilot sub-agent** that uses MCP only for low-risk reads (e.g. documentation or ticket fetch) inside scope
+- **MCP foundation (read-only first)**: load **`mcpServers`** from **`SENTINEL_MCP_CONFIG`**; registry of allowed servers/tools per project; worker or API-side **MCP client** with timeouts; audit log schema for tool calls; pilot **one MCP server sub-agent** (one configured server) for low-risk reads only (e.g. search or doc fetch) inside scope
 
 ### M4 - Learning loop
 - Feedback capture
@@ -195,14 +204,14 @@ The repo is a **runnable stack** (Docker Compose, Postgres init schema, API with
 
 ### Remaining gaps (prioritize via M1 → M6)
 
-- **Security / M1**: No API authentication, RBAC, or audit middleware; no scope manifest enforcement or policy engine in code.
+- **Security / M1**: **JWT (HS256) + analyst RBAC** on `/api/*`, **audit** middleware (`audit_http`, correlation id), and **scope manifest** checks on mutating routes are implemented; **OIDC/JWKS**, persisted audit store, and **policy engine** are still open.
 - **Data layer**: No Alembic (or equivalent) migrations; schema evolves via `postgres_schema.sql` + manual changes; row-level security and retention jobs not implemented.
 - **Worker**: No Redis-backed job consumer or real ingestion/embeddings/clustering pipelines.
 - **Caido bridge**: Plugin remains TODO stubs (no signed sync to API).
 - **Frontend**: Beyond home + API health check, no dashboard, projects CRUD UI, or analyst workflows.
 - **Object storage**: MinIO wired in compose; API does not yet store evidence bundles in S3-compatible storage.
 - **Hypotheses**: Stub generation and approve only; no reject/cancel, ranking, or RAG-backed proposals.
-- **MCP / sub-agents**: No MCP registry, client, or audited tool-call path in code yet; orchestration remains single-process API/worker without an agent runtime. **Inventory** (pentesting, searxng-docker, ssh-mcp-server, playwright-mcp sources + lab host `192.168.8.70`) is documented above and in `.env.example` files; wiring URLs/ports into the allowlist is still TODO.
+- **MCP / sub-agents**: No MCP registry, client, or audited tool-call path in code yet; orchestration remains single-process API/worker without an agent runtime. **Config contract** is **`SENTINEL_MCP_CONFIG`** → JSON with **`mcpServers`** (Cursor-style); see **`config/mcp.example.json`**. Wiring the client and allowlist is still TODO.
 - **Engineering**: Prometheus/runbooks and optional Python lockfile strategy still open; **OpenAPI↔route parity** covered by API pytest (`test_openapi_contract.py`). CI, `.gitignore`, EditorConfig, and pre-commit are in place.
 - **Docs / process**: `docs/threat_model.md` vs org-standard `THREATMODEL.md` naming still to align; `TASKS.md` may need owner/priority/dates when formal tracking starts.
 

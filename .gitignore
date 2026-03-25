@@ -35,5 +35,8 @@ npm-debug.log*
 *.swp
 *.swo
 
+# Local MCP server definitions (copy from config/mcp.example.json)
+config/mcp.json
+
 # Misc
 *.log

@@ -4,12 +4,14 @@ from contextlib import asynccontextmanager
 from uuid import UUID, uuid4
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import APIRouter, Depends, FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 
 import db
 import logutil
 import persistence
+from audit_middleware import AuditMiddleware
+from authdeps import require_analyst
 from schemas import (
     CreateProjectRequest,
     CreateProjectResponse,
@@ -21,6 +23,7 @@ from schemas import (
     HypothesisGenerationRequest,
     RequestSyncPayload,
 )
+from scopeguard import ensure_project_scope_allows_writes
 
 load_dotenv()
 
@@ -47,6 +50,9 @@ app = FastAPI(
     version=APP_VERSION,
     lifespan=lifespan,
 )
+app.add_middleware(AuditMiddleware)
+
+api_router = APIRouter(prefix="/api", dependencies=[Depends(require_analyst)])
 
 
 @app.get("/health")
@@ -78,12 +84,12 @@ def ready() -> JSONResponse:
     )
 
 
-@app.get("/api/version")
+@api_router.get("/version")
 def api_version() -> dict[str, str]:
     return {"version": APP_VERSION, "service": "sentinel-api"}
 
 
-@app.post("/api/projects", response_model=CreateProjectResponse, status_code=201)
+@api_router.post("/projects", response_model=CreateProjectResponse, status_code=201)
 def create_project(payload: CreateProjectRequest) -> CreateProjectResponse:
     engine = db.get_engine()
     if engine:
@@ -103,11 +109,12 @@ def create_project(payload: CreateProjectRequest) -> CreateProjectResponse:
         "owner_team": payload.owner_team,
     }
     _mem_projects[project_id] = row
+    persistence.register_memory_scope(project_id)
     logutil.emit("project_created", project_id=project_id, persistence="memory")
     return CreateProjectResponse(**row)
 
 
-@app.get("/api/projects/{project_id}")
+@api_router.get("/projects/{project_id}")
 def get_project(project_id: UUID) -> dict:
     engine = db.get_engine()
     if engine:
@@ -122,7 +129,7 @@ def get_project(project_id: UUID) -> dict:
     return project
 
 
-@app.get("/api/projects/{project_id}/surface")
+@api_router.get("/projects/{project_id}/surface")
 def get_surface(project_id: UUID) -> dict:
     engine = db.get_engine()
     if engine:
@@ -140,12 +147,13 @@ def get_surface(project_id: UUID) -> dict:
     }
 
 
-@app.post("/api/sync/requests", status_code=202)
+@api_router.post("/sync/requests", status_code=202)
 def sync_requests(payload: RequestSyncPayload) -> dict:
     engine = db.get_engine()
     if engine:
         if not persistence.project_exists(engine, payload.project_id):
             raise HTTPException(status_code=404, detail="Project not found")
+        ensure_project_scope_allows_writes(engine, payload.project_id)
         n = persistence.insert_caido_requests(engine, payload.project_id, payload.requests)
         logutil.emit(
             "sync_requests",
@@ -156,6 +164,7 @@ def sync_requests(payload: RequestSyncPayload) -> dict:
     key = str(payload.project_id)
     if key not in _mem_projects:
         raise HTTPException(status_code=404, detail="Project not found")
+    ensure_project_scope_allows_writes(None, payload.project_id)
     logutil.emit(
         "sync_requests",
         project_id=key,
@@ -165,18 +174,20 @@ def sync_requests(payload: RequestSyncPayload) -> dict:
     return {"accepted": True, "received": len(payload.requests)}
 
 
-@app.post("/api/sync/findings", status_code=202)
+@api_router.post("/sync/findings", status_code=202)
 def sync_findings(payload: FindingSyncPayload) -> dict:
     engine = db.get_engine()
     if engine:
         if not persistence.project_exists(engine, payload.project_id):
             raise HTTPException(status_code=404, detail="Project not found")
+        ensure_project_scope_allows_writes(engine, payload.project_id)
         n = persistence.insert_findings(engine, payload.project_id, payload.findings)
         logutil.emit("sync_findings", project_id=str(payload.project_id), received=n)
         return {"accepted": True, "received": n}
     key = str(payload.project_id)
     if key not in _mem_projects:
         raise HTTPException(status_code=404, detail="Project not found")
+    ensure_project_scope_allows_writes(None, payload.project_id)
     logutil.emit(
         "sync_findings",
         project_id=key,
@@ -186,7 +197,7 @@ def sync_findings(payload: FindingSyncPayload) -> dict:
     return {"accepted": True, "received": len(payload.findings)}
 
 
-@app.post("/api/hypotheses/generate", status_code=202)
+@api_router.post("/hypotheses/generate", status_code=202)
 def generate_hypotheses(payload: HypothesisGenerationRequest) -> HypothesisGenerateAccepted:
     count = min(payload.max_results, 10)
     hypothesis_ids: list[str] = []
@@ -194,6 +205,7 @@ def generate_hypotheses(payload: HypothesisGenerationRequest) -> HypothesisGener
     if engine:
         if not persistence.project_exists(engine, payload.project_id):
             raise HTTPException(status_code=404, detail="Project not found")
+        ensure_project_scope_allows_writes(engine, payload.project_id)
         for _ in range(count):
             hypothesis_ids.append(persistence.insert_hypothesis_stub(engine, payload.project_id))
         logutil.emit(
@@ -208,6 +220,7 @@ def generate_hypotheses(payload: HypothesisGenerationRequest) -> HypothesisGener
     key = str(payload.project_id)
     if key not in _mem_projects:
         raise HTTPException(status_code=404, detail="Project not found")
+    ensure_project_scope_allows_writes(None, payload.project_id)
     for _ in range(count):
         hid = str(uuid4())
         _mem_hypotheses[hid] = {"id": hid, "project_id": key, "status": "queued"}
@@ -224,27 +237,32 @@ def generate_hypotheses(payload: HypothesisGenerationRequest) -> HypothesisGener
     )
 
 
-@app.post(
-    "/api/hypotheses/{hypothesis_id}/approve",
+@api_router.post(
+    "/hypotheses/{hypothesis_id}/approve",
     response_model=HypothesisApproveResponse,
 )
 def approve_hypothesis(hypothesis_id: UUID) -> HypothesisApproveResponse:
     hid = str(hypothesis_id)
     engine = db.get_engine()
     if engine:
+        pid = persistence.fetch_hypothesis_project_id(engine, hypothesis_id)
+        if pid is None:
+            raise HTTPException(status_code=404, detail="Hypothesis not found")
+        ensure_project_scope_allows_writes(engine, pid)
         if persistence.approve_hypothesis(engine, hypothesis_id):
             logutil.emit("hypothesis_approved", hypothesis_id=hid)
-            return HypothesisApproveResponse(hypothesis_id=hid)
+            return HypothesisApproveResponse(hypothesis_id=hid, status="approved")
         raise HTTPException(status_code=404, detail="Hypothesis not found")
     row = _mem_hypotheses.get(hid)
     if not row:
         raise HTTPException(status_code=404, detail="Hypothesis not found")
+    ensure_project_scope_allows_writes(None, UUID(row["project_id"]))
     row["status"] = "approved"
     logutil.emit("hypothesis_approved", hypothesis_id=hid, persistence="memory")
-    return HypothesisApproveResponse(hypothesis_id=hid)
+    return HypothesisApproveResponse(hypothesis_id=hid, status="approved")
 
 
-@app.post("/api/feedback", status_code=201, response_model=FeedbackCreatedResponse)
+@api_router.post("/feedback", status_code=201, response_model=FeedbackCreatedResponse)
 def create_feedback(payload: FeedbackRequest) -> FeedbackCreatedResponse:
     engine = db.get_engine()
     if engine:
@@ -269,3 +287,6 @@ def create_feedback(payload: FeedbackRequest) -> FeedbackCreatedResponse:
         persistence="memory",
     )
     return FeedbackCreatedResponse(id=fid)
+
+
+app.include_router(api_router)

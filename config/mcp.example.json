@@ -1,0 +1,22 @@
+{
+  "mcpServers": {
+    "pentesting": {
+      "command": "node",
+      "args": ["/absolute/path/to/MCP/pentesting/dist/index.js"],
+      "env": {}
+    },
+    "searxng": {
+      "url": "http://YOUR_MCP_HOST:PORT/sse",
+      "headers": {}
+    },
+    "ssh-mcp": {
+      "url": "http://YOUR_MCP_HOST:PORT/mcp",
+      "headers": {}
+    },
+    "playwright": {
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest"],
+      "env": {}
+    }
+  }
+}

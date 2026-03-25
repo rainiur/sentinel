@@ -9,7 +9,7 @@ For platform delivery milestones and what is still unimplemented in code (auth, 
 - model prompts and outputs
 - API tokens and secrets
 - research source registry
-- **MCP server configurations** (URLs, credentials) and **tool allowlists** per project (lab reference host documented in `PLAN.md` / `SENTINEL_MCP_LAB_HOST`)
+- **MCP server configurations** (JSON `mcpServers` file via `SENTINEL_MCP_CONFIG`), credentials in env/headers, and **tool allowlists** per project
 
 ## Threats
 - prompt injection through external content
@@ -18,7 +18,7 @@ For platform delivery milestones and what is still unimplemented in code (auth, 
 - unauthorized promotion of learning outputs
 - tampering with evidence or audit logs
 - secret leakage through logs or prompts
-- **MCP abuse**: sub-agent or attacker-induced tool calls to non-allowlisted hosts, credential exfiltration via tool arguments, or destructive actions disguised as “testing”
+- **MCP abuse**: domain or **MCP server** sub-agent induced tool calls to non-allowlisted servers/tools, credential exfiltration via tool arguments, or destructive actions disguised as “testing”
 - **SSRF / lateral movement** via MCP tools that accept URLs or network targets without strict validation against scope
 
 ## Controls

@@ -14,6 +14,54 @@ from schemas import (
     RequestItem,
 )
 
+# In-memory scope registration when DATABASE_URL is unset (mirrors Postgres scope_manifests row).
+_mem_scope_project_ids: set[str] = set()
+
+
+def clear_memory_stores() -> None:
+    """Reset in-memory state (tests)."""
+    _mem_scope_project_ids.clear()
+
+
+def register_memory_scope(project_id: str) -> None:
+    _mem_scope_project_ids.add(project_id)
+
+
+def memory_scope_valid(project_id: str) -> bool:
+    return project_id in _mem_scope_project_ids
+
+
+def scope_manifest_valid(engine: Engine, project_id: UUID) -> bool:
+    with engine.connect() as conn:
+        row = conn.execute(
+            text(
+                """
+                SELECT allowed_hosts FROM scope_manifests
+                WHERE project_id = :pid
+                """
+            ),
+            {"pid": project_id},
+        ).one_or_none()
+    if row is None:
+        return False
+    hosts = row[0]
+    if hosts is None:
+        return False
+    if not isinstance(hosts, list):
+        return False
+    return len(hosts) > 0
+
+
+def fetch_hypothesis_project_id(engine: Engine, hypothesis_id: UUID) -> UUID | None:
+    with engine.connect() as conn:
+        row = conn.execute(
+            text("SELECT project_id FROM hypotheses WHERE id = :id"),
+            {"id": hypothesis_id},
+        ).one_or_none()
+    if row is None:
+        return None
+    return row[0]
+
 
 def insert_project(
     engine: Engine,
@@ -22,6 +70,7 @@ def insert_project(
     owner_team: str | None,
 ) -> CreateProjectResponse:
     pid = uuid4()
+    sid = uuid4()
     with engine.begin() as conn:
         conn.execute(
             text(
@@ -34,6 +83,24 @@ def insert_project(
                 "id": pid,
                 "name": name,
                 "owner_team": owner_team,
+            },
+        )
+        conn.execute(
+            text(
+                """
+                INSERT INTO scope_manifests (
+                    id, project_id, allowed_hosts, allowed_schemes, allowed_ports,
+                    allowed_check_families, blocked_check_families, max_rps, approval_rules_json
+                ) VALUES (
+                    :sid, :pid, CAST(:hosts AS jsonb), '["https"]'::jsonb, '[443]'::jsonb,
+                    '[]'::jsonb, '[]'::jsonb, 2, '{}'::jsonb
+                )
+                """
+            ),
+            {
+                "sid": sid,
+                "pid": pid,
+                "hosts": json.dumps(["*"]),
             },
         )
     return CreateProjectResponse(

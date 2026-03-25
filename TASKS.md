@@ -1,6 +1,6 @@
 # TASKS.md - Implementation Backlog
 
-Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`** → *Implementation status and remaining gaps*. Last doc sync: **2026-03-26**.
+Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`** → *Implementation status and remaining gaps*. Last doc sync: **2026-03-26** (MCP config file model).
 
 ## 0. Project setup
 - [x] Create monorepo structure (multi-app layout: `apps/*`, `infra/docker`, `integrations/`, `schemas/`, `docs/`) — Completed: 2026-03-26
@@ -23,10 +23,11 @@ Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`*
 - [x] Keep OpenAPI and routes in sync in CI (contract tests or Spectral) — Completed: 2026-03-26 (same as §0 OpenAPI parity tests)
 - [x] Implement `POST /api/hypotheses/{hypothesis_id}/approve` per OpenAPI — Completed: 2026-03-26
 - [ ] Add hypothesis reject/cancel APIs if/when spec expands
-- [ ] Add JWT/OIDC middleware
-- [ ] Add RBAC model
+- [x] Add JWT (HS256) middleware and env toggles (`SENTINEL_REQUIRE_AUTH`, `SENTINEL_JWT_SECRET`) — Completed: 2026-03-26
+- [ ] Add OIDC / JWKS verification (beyond shared-secret JWT)
+- [x] Add RBAC model (`analyst` / `admin` claims; admin implies full analyst access) — Completed: 2026-03-26
 - [ ] Add SQLAlchemy ORM models and Alembic (or other) migrations (engine + raw SQL exist today)
-- [ ] Add audit logging middleware
+- [x] Add audit logging middleware (`audit_http` JSON + `X-Correlation-ID`) — Completed: 2026-03-26
 - [x] Feedback responses do not echo full request bodies — Completed: 2026-03-26
 
 ## 2. Database
@@ -87,7 +88,7 @@ Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`*
 - [ ] Add promote-to-retrieval flow
 
 ## 9. Policy controls
-- [ ] Implement scope manifest validation
+- [x] Implement scope manifest validation stub (non-empty `allowed_hosts`; default row on API project create) — Completed: 2026-03-26
 - [ ] Add decision engine for action gating
 - [ ] Add rate limit enforcement
 - [ ] Add restricted family policies
@@ -122,8 +123,8 @@ Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`*
 - [x] Worker: do not log raw `DATABASE_URL` / credentials (redacted URLs only) — Completed: 2026-03-26
 
 ## 13. MCP and sub-agent orchestration
-- [x] Document reference MCP source paths and lab host `192.168.8.70` (`PLAN.md`, `docs/architecture.md`, `.env.example`, Compose env passthrough) — Completed: 2026-03-25
-- [ ] Document per-server URL/port map once each MCP service’s listen address on the lab host is fixed
+- [x] Document MCP via Cursor-style `mcpServers` JSON (`SENTINEL_MCP_CONFIG`, `config/mcp.example.json`; no single lab host) — Completed: 2026-03-26
+- [x] Document 1:1 mapping **each `mcpServers` key → dedicated MCP sub-agent** (domain agents delegate); see `PLAN.md` / `docs/architecture.md` — Completed: 2026-03-26
 - [ ] Document MCP server/tool allowlist model and config surface (per-project vs global; env/vault)
 - [ ] Design tool risk classes (read / write / destructive) and map to approval + audit requirements
 - [ ] Implement MCP client wrapper: timeouts, retries with backoff, correlation IDs, structured audit events (no secrets in logs)
