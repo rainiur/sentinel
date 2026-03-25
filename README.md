@@ -28,6 +28,21 @@ It includes:
 | `docs/threat_model.md` | Threat summary (expand as the system grows) |
 | `schemas/openapi.yaml` | HTTP API contract (servers include Docker and local defaults) |
 | `schemas/postgres_schema.sql` | Relational schema applied on first Postgres init in Compose |
+| `.github/workflows/ci.yml` | GitHub Actions CI (API tests, web build, Compose validate, Docker build) |
+| `.github/BRANCH_PROTECTION.md` | How to enable branch protection on `main` |
+
+## Continuous integration
+
+On **push** and **pull request** to `main`, [GitHub Actions](.github/workflows/ci.yml) runs:
+
+1. **API (pytest)** — Python 3.12, `apps/api` tests  
+2. **Web (Next.js build)** — Node 22, `npm ci` + `npm run build`  
+3. **Docker Compose (config)** — `docker compose … config` (no daemon)  
+4. **Docker images (build)** — build API, worker, and web (`runner`) images without pushing  
+
+### Branch protection
+
+After CI has passed at least once on `main`, configure rules under **Settings → Branches** on GitHub. Step-by-step: **[`.github/BRANCH_PROTECTION.md`](.github/BRANCH_PROTECTION.md)**.
 
 ## Principles
 
