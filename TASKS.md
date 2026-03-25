@@ -39,7 +39,8 @@ Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`*
 
 ## 2b. Worker service
 - [x] Redis-backed queue consumer: **BRPOP** on **`SENTINEL_JOB_QUEUE`** (default `sentinel:jobs`), JSON jobs with **`noop`** / **`ping`** types; periodic heartbeat — Completed: 2026-03-26
-- [ ] Add job types for ingest, embeddings, clustering, and sub-agent steps; API or internal producer to **LPUSH** jobs
+- [x] Job types **ingest** and **embeddings** (stub handlers in worker); **`POST /api/jobs`** **LPUSH**es JSON to **`SENTINEL_JOB_QUEUE`** (requires **`REDIS_URL`** on API) — Completed: 2026-03-26
+- [ ] Add job types **clustering**, **sub-agent** steps; additional producers as needed
 - [x] Worker uses Redis client; dependencies declared — Completed: 2026-03-26
 
 ## 3. Caido integration

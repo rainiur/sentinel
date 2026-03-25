@@ -165,6 +165,39 @@ paths:
       responses:
         '201':
           description: Created
+  /api/jobs:
+    post:
+      summary: Enqueue a worker job (Redis LPUSH JSON to the worker queue)
+      description: |
+        For `ingest` and `embeddings`, `project_id` is required and the project must exist with a valid scope manifest.
+        Requires `REDIS_URL` on the API. Job types `noop` and `ping` do not require `project_id`.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnqueueJobRequest'
+      responses:
+        '202':
+          description: Job accepted for background processing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnqueueJobResponse'
+        '401':
+          description: Missing or invalid bearer token when auth is required
+        '403':
+          description: Insufficient role
+        '404':
+          description: Project not found
+        '409':
+          description: Scope manifest missing or invalid for the project
+        '422':
+          description: Validation error (e.g. missing project_id for ingest/embeddings)
+        '503':
+          description: Redis unavailable or enqueue failed
 components:
   securitySchemes:
     bearerAuth:
@@ -248,3 +281,27 @@ components:
           type: string
         notes:
           type: string
+    EnqueueJobRequest:
+      type: object
+      required: [type]
+      properties:
+        type:
+          type: string
+          enum: [ingest, embeddings, ping, noop]
+        project_id:
+          type: string
+          format: uuid
+        payload:
+          type: object
+          additionalProperties: true
+        correlation_id:
+          type: string
+    EnqueueJobResponse:
+      type: object
+      required: [job_id, queued]
+      properties:
+        queued:
+          type: boolean
+        job_id:
+          type: string
+          format: uuid

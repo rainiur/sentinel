@@ -198,7 +198,7 @@ The repo is a **runnable stack** (Docker Compose, Postgres init schema, API with
 - **API**: `GET /health`, `GET /ready`, `GET /api/version`; Pydantic bodies aligned with `schemas/openapi.yaml`; **Postgres persistence when `DATABASE_URL` is set** (compose), **in-memory fallback** when unset (e.g. tests); sync and feedback routes persist to DB when configured; `POST /api/hypotheses/{id}/approve`; structured JSON log lines for key events (`apps/api/logutil.py`).
 - **OpenAPI**: Documents Docker default API URL (`30880`) and local uvicorn (`8080`).
 - **Web**: App Router with root layout; **production `runner` image** (`next build` + standalone); dev stage in Dockerfile; `package-lock.json` committed.
-- **Worker**: Redacted URL logging; optional Redis ping on heartbeat (no job queue yet).
+- **Worker**: Redis **BRPOP** consumer on **`sentinel:jobs`**; job types **`noop`**, **`ping`**, stub **`ingest`** / **`embeddings`**; redacted URL logging; optional Redis ping on heartbeat.
 - **Docs / examples**: `README.md` (ports, Docker-first flow, last updated), per-app `.env.example`, `infra/docker/.env.example`.
 - **Tests**: API unit tests (`apps/api/tests/`, `requirements-dev.txt`).
 
@@ -206,7 +206,7 @@ The repo is a **runnable stack** (Docker Compose, Postgres init schema, API with
 
 - **Security / M1**: **JWT (HS256) + analyst RBAC** on `/api/*`, **audit** middleware (`audit_http`, correlation id), and **scope manifest** checks on mutating routes are implemented; **OIDC/JWKS**, persisted audit store, and **policy engine** are still open.
 - **Data layer**: No Alembic (or equivalent) migrations; schema evolves via `postgres_schema.sql` + manual changes; row-level security and retention jobs not implemented.
-- **Worker**: **Redis BRPOP** consumer for JSON jobs (`noop`, `ping`) on **`sentinel:jobs`**; no ingestion/embeddings/clustering job types or API producer yet.
+- **Worker**: **Redis BRPOP** on **`sentinel:jobs`**; **`ingest`** / **`embeddings`** stubs; API **`POST /api/jobs`** **LPUSH** producer when **`REDIS_URL`** is set. **Clustering** / **sub-agent** job types and richer pipelines still open.
 - **Caido bridge**: Plugin remains TODO stubs (no signed sync to API).
 - **Frontend**: Beyond home + API health check, no dashboard, projects CRUD UI, or analyst workflows.
 - **Object storage**: MinIO wired in compose; API does not yet store evidence bundles in S3-compatible storage.

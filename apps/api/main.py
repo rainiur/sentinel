@@ -6,8 +6,10 @@ from uuid import UUID, uuid4
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, FastAPI, HTTPException
 from fastapi.responses import JSONResponse
+from redis.exceptions import RedisError
 
 import db
+import jobqueue
 import logutil
 import persistence
 from audit_middleware import AuditMiddleware
@@ -15,6 +17,8 @@ from authdeps import require_analyst
 from schemas import (
     CreateProjectRequest,
     CreateProjectResponse,
+    EnqueueJobRequest,
+    EnqueueJobResponse,
     FeedbackCreatedResponse,
     FeedbackRequest,
     FindingSyncPayload,
@@ -287,6 +291,54 @@ def create_feedback(payload: FeedbackRequest) -> FeedbackCreatedResponse:
         persistence="memory",
     )
     return FeedbackCreatedResponse(id=fid)
+
+
+def _enqueue_job_body(job_id: str, req: EnqueueJobRequest) -> dict:
+    body: dict = {"job_id": job_id, "type": req.type}
+    if req.project_id is not None:
+        body["project_id"] = str(req.project_id)
+    if req.payload is not None:
+        body["payload"] = req.payload
+    if req.correlation_id:
+        body["correlation_id"] = req.correlation_id
+    return body
+
+
+@api_router.post("/jobs", status_code=202, response_model=EnqueueJobResponse)
+def enqueue_worker_job(req: EnqueueJobRequest) -> EnqueueJobResponse:
+    """LPUSH a JSON job for the worker (ingest, embeddings, ping, noop)."""
+    if req.type in ("ingest", "embeddings"):
+        project_id = req.project_id
+        if project_id is None:
+            raise HTTPException(
+                status_code=422,
+                detail="project_id is required for ingest and embeddings jobs",
+            )
+        engine = db.get_engine()
+        if engine:
+            if not persistence.project_exists(engine, project_id):
+                raise HTTPException(status_code=404, detail="Project not found")
+            ensure_project_scope_allows_writes(engine, project_id)
+        else:
+            key = str(project_id)
+            if key not in _mem_projects:
+                raise HTTPException(status_code=404, detail="Project not found")
+            ensure_project_scope_allows_writes(None, project_id)
+
+    job_id = str(uuid4())
+    try:
+        jobqueue.enqueue_job(_enqueue_job_body(job_id, req))
+    except jobqueue.RedisNotConfiguredError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail="Job queue unavailable (REDIS_URL not configured)",
+        ) from exc
+    except RedisError as exc:
+        logutil.emit("job_enqueue_failed", level=30, error=type(exc).__name__)
+        raise HTTPException(status_code=503, detail="Failed to enqueue job") from exc
+
+    logutil.emit("job_enqueued", job_id=job_id, job_type=req.type)
+    return EnqueueJobResponse(job_id=job_id)
 
 
 app.include_router(api_router)

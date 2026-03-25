@@ -135,7 +135,9 @@ npm run dev
 
 Use **Python 3.12** in `.venv` when possible; **3.10+** is the declared minimum.
 
-**Enqueue a test job (Redis CLI):** with Compose Redis on host port **30379** (default), e.g.
+**Enqueue a worker job:** with **`REDIS_URL`** set (Compose wires it for the API), **`POST /api/jobs`** with JSON body `{"type":"ping"}` or `{"type":"ingest","project_id":"<uuid>",...}` — the API **LPUSH**es to **`sentinel:jobs`** (override with **`SENTINEL_JOB_QUEUE`**). Types **`noop`** and **`ping`** do not require a project; **`ingest`** and **`embeddings`** require an existing project and valid scope (same rules as sync).
+
+**Enqueue via Redis CLI (manual):** with Compose Redis on host port **30379** (default), e.g.
 `redis-cli -p 30379 LPUSH sentinel:jobs '{"type":"ping","job_id":"cli-1","correlation_id":"manual"}'` — the worker container logs **`job_ping`**.
 
 ### Lint / hooks (same venv)

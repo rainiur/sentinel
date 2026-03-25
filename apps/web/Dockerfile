@@ -1,4 +1,5 @@
-FROM node:22-alpine AS deps
+# Node 22.22.2: official image has no 22.22.2-alpine tag yet; bookworm-slim is the smallest exact pin.
+FROM node:22.22.2-bookworm-slim AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
@@ -14,13 +15,13 @@ ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
 COPY . .
 RUN npm run build
 
-FROM node:22-alpine AS runner
+FROM node:22.22.2-bookworm-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
-RUN addgroup --system --gid 1001 nodejs \
-  && adduser --system --uid 1001 nextjs
+RUN groupadd --gid 1001 nodejs \
+  && useradd --uid 1001 --gid nodejs --no-create-home --shell /usr/sbin/nologin nextjs
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static

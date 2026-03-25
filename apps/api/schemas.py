@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class CreateProjectRequest(BaseModel):
@@ -76,3 +76,23 @@ class HypothesisGenerateAccepted(BaseModel):
 class HypothesisApproveResponse(BaseModel):
     status: str = "approved"
     hypothesis_id: str
+
+
+class EnqueueJobRequest(BaseModel):
+    """Queue a worker job. ``project_id`` is required for ``ingest`` and ``embeddings``."""
+
+    type: Literal["ingest", "embeddings", "ping", "noop"]
+    project_id: UUID | None = None
+    payload: dict[str, Any] | None = None
+    correlation_id: str | None = None
+
+    @model_validator(mode="after")
+    def require_project_for_work_jobs(self) -> EnqueueJobRequest:
+        if self.type in ("ingest", "embeddings") and self.project_id is None:
+            raise ValueError("project_id is required for ingest and embeddings jobs")
+        return self
+
+
+class EnqueueJobResponse(BaseModel):
+    queued: bool = True
+    job_id: str
