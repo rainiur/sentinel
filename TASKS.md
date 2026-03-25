@@ -4,7 +4,8 @@ Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`*
 
 ## 0. Project setup
 - [x] Create monorepo structure (multi-app layout: `apps/*`, `infra/docker`, `integrations/`, `schemas/`, `docs/`) — Completed: 2026-03-26
-- [ ] Configure root `.editorconfig`, `.gitignore`, pre-commit hooks
+- [x] Configure root `.gitignore` — Completed: 2026-03-26
+- [ ] Configure `.editorconfig`, pre-commit hooks
 - [ ] Add CI for lint, test, schema validation (include OpenAPI vs API parity checks where feasible)
 - [x] Create `.env.example` files for each service (`apps/api`, `apps/worker`, `apps/web`, `infra/docker/.env.example`) — Completed: 2026-03-26
 - [x] Commit a web package lockfile (`package-lock.json`) — Completed: 2026-03-26 (npm; document policy in README if you standardize on pnpm/yarn later)
