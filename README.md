@@ -35,7 +35,7 @@ It includes:
 
 On **push** and **pull request** to `main`, [GitHub Actions](.github/workflows/ci.yml) runs:
 
-1. **API** — Python 3.12: Ruff check + format check, then `pytest` in `apps/api`
+1. **API** — Python 3.12: Ruff check + format check, then `pytest` in `apps/api` (includes OpenAPI file validation and path/method parity vs FastAPI)
 2. **Web** — Node 22: `npm ci`, `npm run lint`, `npm run build`
 3. **Docker Compose (config)** — `docker compose … config` (no daemon)
 4. **Docker images (build)** — build API, worker, and web (`runner`) images without pushing

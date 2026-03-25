@@ -203,7 +203,7 @@ The repo is a **runnable stack** (Docker Compose, Postgres init schema, API with
 - **Object storage**: MinIO wired in compose; API does not yet store evidence bundles in S3-compatible storage.
 - **Hypotheses**: Stub generation and approve only; no reject/cancel, ranking, or RAG-backed proposals.
 - **MCP / sub-agents**: No MCP registry, client, or audited tool-call path in code yet; orchestration remains single-process API/worker without an agent runtime. **Inventory** (pentesting, searxng-docker, ssh-mcp-server, playwright-mcp sources + lab host `192.168.8.70`) is documented above and in `.env.example` files; wiring URLs/ports into the allowlist is still TODO.
-- **Engineering**: OpenAPI↔code parity job, Prometheus/runbooks, and optional Python lockfile strategy still open (CI, `.gitignore`, EditorConfig, and pre-commit are in place).
+- **Engineering**: Prometheus/runbooks and optional Python lockfile strategy still open; **OpenAPI↔route parity** covered by API pytest (`test_openapi_contract.py`). CI, `.gitignore`, EditorConfig, and pre-commit are in place.
 - **Docs / process**: `docs/threat_model.md` vs org-standard `THREATMODEL.md` naming still to align; `TASKS.md` may need owner/priority/dates when formal tracking starts.
 
 ---

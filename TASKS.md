@@ -1,13 +1,13 @@
 # TASKS.md - Implementation Backlog
 
-Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`** → *Implementation status and remaining gaps*. Last doc sync: **2026-03-25**.
+Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`** → *Implementation status and remaining gaps*. Last doc sync: **2026-03-26**.
 
 ## 0. Project setup
 - [x] Create monorepo structure (multi-app layout: `apps/*`, `infra/docker`, `integrations/`, `schemas/`, `docs/`) — Completed: 2026-03-26
 - [x] Configure root `.gitignore` — Completed: 2026-03-26
 - [x] Configure `.editorconfig`, pre-commit hooks (`.pre-commit-config.yaml`, root `requirements-dev.txt`) — Completed: 2026-03-26
 - [x] Add CI for lint + test + Docker build (Ruff, ESLint, pytest, compose, images on `main`) — Completed: 2026-03-26
-- [ ] Add OpenAPI vs API parity checks in CI where feasible
+- [x] Add OpenAPI vs API parity checks in CI where feasible — Completed: 2026-03-26 (validate `schemas/openapi.yaml`; pytest parity vs FastAPI routes in `apps/api/tests/test_openapi_contract.py`)
 - [x] Create `.env.example` files for each service (`apps/api`, `apps/worker`, `apps/web`, `infra/docker/.env.example`) — Completed: 2026-03-26
 - [x] Commit a web package lockfile (`package-lock.json`) — Completed: 2026-03-26 (npm; document policy in README if you standardize on pnpm/yarn later)
 - [ ] Adopt stricter Python dependency pinning if required (pip-tools / Poetry export) for reproducible builds and SCA
@@ -20,7 +20,7 @@ Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`*
 - [x] Add health, readiness, version endpoints (`/health`, `/ready`, `/api/version`) — Completed: 2026-03-26
 - [x] Postgres-backed persistence when `DATABASE_URL` is set; in-memory fallback when unset — Completed: 2026-03-26
 - [x] Align request/response models with `schemas/openapi.yaml` (Pydantic; not raw `dict` on sync/feedback/hypotheses) — Completed: 2026-03-26
-- [ ] Keep OpenAPI and routes in sync in CI (contract tests or Spectral)
+- [x] Keep OpenAPI and routes in sync in CI (contract tests or Spectral) — Completed: 2026-03-26 (same as §0 OpenAPI parity tests)
 - [x] Implement `POST /api/hypotheses/{hypothesis_id}/approve` per OpenAPI — Completed: 2026-03-26
 - [ ] Add hypothesis reject/cancel APIs if/when spec expands
 - [ ] Add JWT/OIDC middleware
