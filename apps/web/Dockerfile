@@ -1,5 +1,5 @@
-# Node 22.22.2: official image has no 22.22.2-alpine tag yet; bookworm-slim is the smallest exact pin.
-FROM node:22.22.2-bookworm-slim AS deps
+# Node 22.22.2: official image has no 22.22.2-alpine tag yet; trixie-slim pins Debian 13 (testing) base.
+FROM node:22.22.2-trixie-slim AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
@@ -15,7 +15,7 @@ ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
 COPY . .
 RUN npm run build
 
-FROM node:22.22.2-bookworm-slim AS runner
+FROM node:22.22.2-trixie-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
