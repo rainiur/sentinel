@@ -24,12 +24,18 @@ Runs all asynchronous jobs:
 - clustering
 - research fetch and parse
 - evaluation
+- **planned**: orchestrated **sub-agent** steps and **MCP tool** invocations that are policy-checked, scoped, and audited before side effects
 
 ### Web
 Provides analyst and admin console.
 
 ### Caido bridge
 Acts as the in-tool operator interface and artifact exporter.
+
+### Orchestration / MCP plane (planned)
+Sub-agents coordinate reasoning and retrieval; **MCP servers** expose tools (browser automation, scanners, ticketing, etc.) used **only** through an allowlisted, rate-limited client with structured logging. Caido remains the primary source of proxy-native traffic and operator workflow context; MCP extends **testing and evidence** workflows where explicitly permitted.
+
+**Intended server set (lab):** sources live under `…/Programs/MCP/` as **`pentesting`**, **`searxng-docker`**, **`ssh-mcp-server`**, and **`playwright-mcp`** (see **`PLAN.md`** → *Reference MCP inventory* for full paths). Deployed instances are expected reachable at **`192.168.8.70`**; Sentinel reads host and per-server endpoints from environment (see `infra/docker/.env.example`). Treat **SSH** and **Playwright** tool families as especially sensitive at the policy boundary.
 
 ## Key trust boundaries
 
@@ -38,5 +44,6 @@ Acts as the in-tool operator interface and artifact exporter.
 3. API <-> Model providers
 4. API <-> Caido bridge
 5. Research ingestion -> retrieval store
+6. **Sub-agent runtime -> MCP servers** (treat as high privilege: validate every call against scope manifest and tool policy; never trust model-produced hostnames or secrets)
 
 Treat external research and user-supplied documents as untrusted content.

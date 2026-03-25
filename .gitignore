@@ -5,6 +5,8 @@
 infra/docker/.env
 
 # Python
+.ruff_cache/
+.ruff-venv/
 __pycache__/
 *.py[cod]
 *$py.class

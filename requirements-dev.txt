@@ -1,0 +1,2 @@
+# Optional repo-wide dev tools (install from repo root).
+pre-commit>=4.0.0,<5

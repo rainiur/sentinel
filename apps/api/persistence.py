@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-from typing import List, Optional
 from uuid import UUID, uuid4
 
 from sqlalchemy import Engine, text
@@ -20,7 +19,7 @@ def insert_project(
     engine: Engine,
     *,
     name: str,
-    owner_team: Optional[str],
+    owner_team: str | None,
 ) -> CreateProjectResponse:
     pid = uuid4()
     with engine.begin() as conn:
@@ -44,7 +43,7 @@ def insert_project(
     )
 
 
-def fetch_project(engine: Engine, project_id: UUID) -> Optional[dict]:
+def fetch_project(engine: Engine, project_id: UUID) -> dict | None:
     with engine.connect() as conn:
         row = conn.execute(
             text(
@@ -66,36 +65,48 @@ def project_exists(engine: Engine, project_id: UUID) -> bool:
 
 def fetch_surface(engine: Engine, project_id: UUID) -> dict:
     with engine.connect() as conn:
-        ep_rows = conn.execute(
-            text(
-                """
+        ep_rows = (
+            conn.execute(
+                text(
+                    """
                 SELECT id::text, method, route_pattern, content_type, auth_required
                 FROM endpoints WHERE project_id = :pid
                 ORDER BY route_pattern
                 """
-            ),
-            {"pid": project_id},
-        ).mappings().all()
-        param_rows = conn.execute(
-            text(
-                """
+                ),
+                {"pid": project_id},
+            )
+            .mappings()
+            .all()
+        )
+        param_rows = (
+            conn.execute(
+                text(
+                    """
                 SELECT p.id::text AS id, p.name, p.location, p.endpoint_id::text AS endpoint_id
                 FROM parameters p
                 JOIN endpoints e ON e.id = p.endpoint_id
                 WHERE e.project_id = :pid
                 """
-            ),
-            {"pid": project_id},
-        ).mappings().all()
-        auth_rows = conn.execute(
-            text(
-                """
+                ),
+                {"pid": project_id},
+            )
+            .mappings()
+            .all()
+        )
+        auth_rows = (
+            conn.execute(
+                text(
+                    """
                 SELECT id::text, label FROM auth_contexts
                 WHERE project_id = :pid
                 """
-            ),
-            {"pid": project_id},
-        ).mappings().all()
+                ),
+                {"pid": project_id},
+            )
+            .mappings()
+            .all()
+        )
     return {
         "project_id": str(project_id),
         "endpoints": [dict(r) for r in ep_rows],
@@ -107,7 +118,7 @@ def fetch_surface(engine: Engine, project_id: UUID) -> dict:
 def insert_caido_requests(
     engine: Engine,
     project_id: UUID,
-    items: List[RequestItem],
+    items: list[RequestItem],
 ) -> int:
     sql = text(
         """
@@ -145,7 +156,7 @@ def insert_caido_requests(
 def insert_findings(
     engine: Engine,
     project_id: UUID,
-    items: List[FindingSyncItem],
+    items: list[FindingSyncItem],
 ) -> int:
     sql = text(
         """

@@ -9,7 +9,7 @@ Branch protection is configured in the GitHub UI (not in this repository). After
 3. Enable:
    - **Require a pull request before merging** (optional but recommended for teams).
    - **Require status checks to pass before merging**
-     - Search and enable: **API (pytest)**, **Web (Next.js build)**, **Docker Compose (config)**, **Docker images (build)** — names match jobs in `.github/workflows/ci.yml`.
+     - Search and enable: **API**, **Web**, **Docker Compose (config)**, **Docker images (build)** — names match the `name:` fields in `.github/workflows/ci.yml`.
    - **Require branches to be up to date before merging** (recommended if you use PRs).
 4. Optional hardening:
    - **Require linear history**

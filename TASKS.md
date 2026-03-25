@@ -1,13 +1,13 @@
 # TASKS.md - Implementation Backlog
 
-Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`** → *Implementation status and remaining gaps*. Last doc sync: **2026-03-26**.
+Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`** → *Implementation status and remaining gaps*. Last doc sync: **2026-03-25**.
 
 ## 0. Project setup
 - [x] Create monorepo structure (multi-app layout: `apps/*`, `infra/docker`, `integrations/`, `schemas/`, `docs/`) — Completed: 2026-03-26
 - [x] Configure root `.gitignore` — Completed: 2026-03-26
-- [ ] Configure `.editorconfig`, pre-commit hooks
-- [x] Add CI for test + Docker build (GitHub Actions on `main`) — Completed: 2026-03-26
-- [ ] Add lint + OpenAPI vs API parity checks in CI where feasible
+- [x] Configure `.editorconfig`, pre-commit hooks (`.pre-commit-config.yaml`, root `requirements-dev.txt`) — Completed: 2026-03-26
+- [x] Add CI for lint + test + Docker build (Ruff, ESLint, pytest, compose, images on `main`) — Completed: 2026-03-26
+- [ ] Add OpenAPI vs API parity checks in CI where feasible
 - [x] Create `.env.example` files for each service (`apps/api`, `apps/worker`, `apps/web`, `infra/docker/.env.example`) — Completed: 2026-03-26
 - [x] Commit a web package lockfile (`package-lock.json`) — Completed: 2026-03-26 (npm; document policy in README if you standardize on pnpm/yarn later)
 - [ ] Adopt stricter Python dependency pinning if required (pip-tools / Poetry export) for reproducible builds and SCA
@@ -120,3 +120,15 @@ Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`*
 - [ ] Add immutable audit record export
 - [ ] Add model provider failover controls
 - [x] Worker: do not log raw `DATABASE_URL` / credentials (redacted URLs only) — Completed: 2026-03-26
+
+## 13. MCP and sub-agent orchestration
+- [x] Document reference MCP source paths and lab host `192.168.8.70` (`PLAN.md`, `docs/architecture.md`, `.env.example`, Compose env passthrough) — Completed: 2026-03-25
+- [ ] Document per-server URL/port map once each MCP service’s listen address on the lab host is fixed
+- [ ] Document MCP server/tool allowlist model and config surface (per-project vs global; env/vault)
+- [ ] Design tool risk classes (read / write / destructive) and map to approval + audit requirements
+- [ ] Implement MCP client wrapper: timeouts, retries with backoff, correlation IDs, structured audit events (no secrets in logs)
+- [ ] Validate tool arguments against scope manifest (hosts, paths, methods) before invocation
+- [ ] Add emergency disable / per-server kill switch in config or API
+- [ ] Integrate first pilot: read-only MCP tools from worker or API path behind feature flag
+- [ ] Add sub-agent orchestration boundary (queue job type or dedicated service) separate from interactive API latency
+- [ ] Extend OpenAPI / internal contracts for “tool run” or “agent step” results where needed for UI replay

@@ -1,0 +1,22 @@
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["apps/api", "apps/worker"]
+extend-exclude = ["node_modules", ".next", ".venv"]
+
+[tool.ruff.lint]
+select = [
+  "E",   # pycodestyle errors
+  "W",   # pycodestyle warnings
+  "F",   # Pyflakes
+  "I",   # isort
+  "B",   # flake8-bugbear
+  "UP",  # pyupgrade
+  "SIM", # flake8-simplify
+]
+# UP017 prefers datetime.UTC (3.11+); keep timezone.utc so the API still runs on 3.10.
+ignore = ["UP017"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"

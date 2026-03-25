@@ -146,9 +146,7 @@ def sync_requests(payload: RequestSyncPayload) -> dict:
     if engine:
         if not persistence.project_exists(engine, payload.project_id):
             raise HTTPException(status_code=404, detail="Project not found")
-        n = persistence.insert_caido_requests(
-            engine, payload.project_id, payload.requests
-        )
+        n = persistence.insert_caido_requests(engine, payload.project_id, payload.requests)
         logutil.emit(
             "sync_requests",
             project_id=str(payload.project_id),
@@ -197,9 +195,7 @@ def generate_hypotheses(payload: HypothesisGenerationRequest) -> HypothesisGener
         if not persistence.project_exists(engine, payload.project_id):
             raise HTTPException(status_code=404, detail="Project not found")
         for _ in range(count):
-            hypothesis_ids.append(
-                persistence.insert_hypothesis_stub(engine, payload.project_id)
-            )
+            hypothesis_ids.append(persistence.insert_hypothesis_stub(engine, payload.project_id))
         logutil.emit(
             "hypotheses_generate",
             project_id=str(payload.project_id),

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -10,13 +10,13 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class CreateProjectRequest(BaseModel):
     name: str
-    owner_team: Optional[str] = None
+    owner_team: str | None = None
 
 
 class CreateProjectResponse(BaseModel):
     id: str
     name: str
-    owner_team: Optional[str] = None
+    owner_team: str | None = None
 
 
 class RequestItem(BaseModel):
@@ -25,14 +25,14 @@ class RequestItem(BaseModel):
     url: str
     host: str
     path: str
-    status_code: Optional[int] = None
-    req_headers_json: Optional[Dict[str, Any]] = None
-    resp_headers_json: Optional[Dict[str, Any]] = None
+    status_code: int | None = None
+    req_headers_json: dict[str, Any] | None = None
+    resp_headers_json: dict[str, Any] | None = None
 
 
 class RequestSyncPayload(BaseModel):
     project_id: UUID
-    requests: List[RequestItem]
+    requests: list[RequestItem]
 
 
 class FindingSyncItem(BaseModel):
@@ -40,13 +40,13 @@ class FindingSyncItem(BaseModel):
 
     source: str = "caido"
     bug_class: str = "unspecified"
-    severity: Optional[str] = None
-    confidence: Optional[float] = None
+    severity: str | None = None
+    confidence: float | None = None
 
 
 class FindingSyncPayload(BaseModel):
     project_id: UUID
-    findings: List[FindingSyncItem]
+    findings: list[FindingSyncItem]
 
 
 class HypothesisGenerationRequest(BaseModel):
@@ -59,7 +59,7 @@ class FeedbackRequest(BaseModel):
     object_id: UUID
     feedback_type: str
     user_id: str
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 class FeedbackCreatedResponse(BaseModel):
@@ -70,7 +70,7 @@ class FeedbackCreatedResponse(BaseModel):
 class HypothesisGenerateAccepted(BaseModel):
     accepted: bool = True
     project_id: str
-    hypothesis_ids: List[str]
+    hypothesis_ids: list[str]
 
 
 class HypothesisApproveResponse(BaseModel):
