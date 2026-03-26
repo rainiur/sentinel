@@ -16,6 +16,7 @@ import mcpconfig
 import persistence
 from audit_middleware import AuditMiddleware
 from authdeps import require_analyst
+from rate_limit_middleware import RateLimitMiddleware, rate_limit_rpm_configured
 from schemas import (
     CreateProjectRequest,
     CreateProjectResponse,
@@ -128,6 +129,7 @@ app = FastAPI(
 )
 app.add_middleware(AuditMiddleware)
 app.add_middleware(WriteKillSwitchMiddleware)
+app.add_middleware(RateLimitMiddleware)
 
 api_router = APIRouter(prefix="/api", dependencies=[Depends(require_analyst)])
 
@@ -162,11 +164,12 @@ def ready() -> JSONResponse:
 
 
 @api_router.get("/version")
-def api_version() -> dict[str, str | bool]:
+def api_version() -> dict[str, str | bool | int]:
     return {
         "version": APP_VERSION,
         "service": "sentinel-api",
         "writes_disabled": writes_disabled(),
+        "rate_limit_rpm": rate_limit_rpm_configured(),
     }
 
 

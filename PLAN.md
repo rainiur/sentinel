@@ -194,7 +194,7 @@ The repo is a **runnable stack** (Docker Compose, Postgres init schema, API with
 
 ### Delivered in the current scaffold
 
-- **Compose**: Postgres (pgvector), Redis, MinIO, API, worker, web; Postgres/Redis health-gated startup; **host ports** default away from 5432/6379/8080/3000/9000/9001 (see `infra/docker/.env.example`).
+- **Compose**: Postgres (pgvector), Redis, MinIO, API, worker, web; Postgres/Redis health-gated startup; **host ports** default away from 5432/6379/8080/3000/9000/9001 (see `infra/docker/.env.example`); default **MCP JSON** bind-mount for API/worker (`SENTINEL_MCP_HOST_FILE`).
 - **API**: `GET /health`, `GET /ready`, `GET /api/version`; Pydantic bodies aligned with `schemas/openapi.yaml`; **Postgres persistence when `DATABASE_URL` is set** (compose), **in-memory fallback** when unset (e.g. tests); sync and feedback routes persist to DB when configured; `POST /api/hypotheses/{id}/approve`; structured JSON log lines for key events (`apps/api/logutil.py`).
 - **OpenAPI**: Documents Docker default API URL (`30880`) and local uvicorn (`8080`).
 - **Web**: App Router with root layout; **production `runner` image** (`next build` + standalone); dev stage in Dockerfile; `package-lock.json` committed.
@@ -204,11 +204,11 @@ The repo is a **runnable stack** (Docker Compose, Postgres init schema, API with
 
 ### Remaining gaps (prioritize via M1 → M6)
 
-- **Security / M1**: **JWT (HS256) + analyst RBAC** on `/api/*`, **audit** middleware (`audit_http`, correlation id), and **scope manifest** checks on mutating routes are implemented; **OIDC/JWKS**, persisted audit store, and **policy engine** are still open.
+- **Security / M1**: **JWT (HS256) + analyst RBAC** on `/api/*`, **audit** middleware (`audit_http`, correlation id), **scope manifest** checks on mutating routes, optional **`SENTINEL_API_WRITES_DISABLED`**, and optional **`SENTINEL_RATE_LIMIT_RPM`** (in-process `/api/*` cap) are implemented; **OIDC/JWKS**, persisted audit store, and **policy engine** are still open.
 - **Data layer**: No Alembic (or equivalent) migrations; schema evolves via `postgres_schema.sql` + manual changes; row-level security and retention jobs not implemented.
 - **Worker**: **Redis BRPOP** on **`sentinel:jobs`**; **`ingest`** / **`embeddings`** stubs; API **`POST /api/jobs`** **LPUSH** producer when **`REDIS_URL`** is set. **Clustering** / **sub-agent** job types and richer pipelines still open.
 - **Caido bridge**: Repo includes **`pushRequestsToSentinel`** and **`pushFindingsToSentinel`** (HTTP to **`/api/sync/*`**); Caido SDK wiring and signed callbacks remain TODO.
-- **Frontend**: **Projects** list, project **surface** (endpoints after sync), and **hypotheses** queue pages exist; no full dashboard, project CRUD forms, or richer analyst workflows yet.
+- **Frontend**: **Dashboard** (health, version, MCP summary), **projects** list, project **surface**, **hypotheses**, **findings**, **evidence**; richer analyst workflows (drawers, exports) still open.
 - **Object storage**: MinIO wired in compose; API can **register** **`evidence_bundles`** metadata (**`storage_key`**) after upload; no presigned upload or server-side PUT in API yet.
 - **Hypotheses**: Stub generation; **approve** and **reject** (queued-only); no ranking or RAG-backed proposals yet.
 - **MCP / sub-agents**: **`GET /api/mcp/servers`** summarizes **`SENTINEL_MCP_CONFIG`** (names + transport class only). No MCP registry, client, or audited tool-call path yet; orchestration remains single-process API/worker without an agent runtime. **Config contract** is **`SENTINEL_MCP_CONFIG`** → JSON with **`mcpServers`** (Cursor-style); see **`config/mcp.example.json`**. Wiring the client and allowlist is still TODO.

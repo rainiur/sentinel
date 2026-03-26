@@ -8,6 +8,8 @@ info:
 
     **Authentication:** When `SENTINEL_REQUIRE_AUTH=true` and `SENTINEL_JWT_SECRET` are set, all `/api/*` routes require `Authorization: Bearer <JWT>` (HS256).
     Claims: `sub` (string), `exp` (number), `role` (`analyst` or `admin`). When `SENTINEL_REQUIRE_AUTH` is unset or false, requests without a bearer token are accepted as an anonymous analyst (development only).
+
+    **Rate limiting:** When `SENTINEL_RATE_LIMIT_RPM` is a positive integer, `/api/*` routes return **429** with a `Retry-After` header after too many requests from the same client in a rolling 60s window (in-process; use a gateway for multi-replica limits). `/health` and `/ready` are not limited.
 servers:
   - url: http://localhost:30880
     description: Docker Compose default (see infra/docker/.env.example)
@@ -35,7 +37,9 @@ paths:
         - bearerAuth: []
       responses:
         '200':
-          description: OK (body includes writes_disabled when maintenance kill-switch is set)
+          description: OK (body includes writes_disabled, rate_limit_rpm)
+        '429':
+          description: Rate limit exceeded when SENTINEL_RATE_LIMIT_RPM is set
         '401':
           description: Missing or invalid bearer token when auth is required
         '403':

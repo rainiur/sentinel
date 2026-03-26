@@ -1,6 +1,6 @@
 # Sentinel for Caido - Build Package
 
-**Last updated:** 2026-03-26 (dashboard, MCP config summary API, optional API write kill-switch)
+**Last updated:** 2026-03-26 (Compose MCP mount, optional /api rate limit, dashboard)
 
 This package is a starter blueprint and implementation scaffold for a **human-governed, scope-bound web security testing assistant** centered on **Caido**, with a planned **sub-agent** layer that can invoke **allowlisted MCP tools** for testing and evidence workflows under policy and audit (see **`PLAN.md`**).
 
@@ -91,7 +91,7 @@ The web image uses the production `runner` stage (`next build` + standalone serv
 
 **Web UI (minimal slice):** **`/`** health probe; **`/dashboard`** (health, API version, **`writes_disabled`** flag, project count, MCP server names from **`GET /api/mcp/servers`**); **`/projects`** (create form + list); project detail (**surface** after request sync); **`/projects/{id}/hypotheses`** (generate, approve, reject); **`/projects/{id}/findings`**; **`/projects/{id}/evidence`**. Surface **groups** paths that differ only by **query string**.
 
-**Operations:** Set **`SENTINEL_API_WRITES_DISABLED=true`** on the API to return **503** for **POST/PUT/PATCH/DELETE** under **`/api/*`** (reads unchanged). Wired through **`infra/docker/.env`** → Compose.
+**Operations:** Set **`SENTINEL_API_WRITES_DISABLED=true`** on the API to return **503** for **POST/PUT/PATCH/DELETE** under **`/api/*`** (reads unchanged). Set **`SENTINEL_RATE_LIMIT_RPM`** for a per-IP rolling-window cap on **`/api/*`** only (**429** + **`Retry-After`**). Compose mounts **`config/mcp.example.json`** into the API and worker as **`/etc/sentinel/mcp.json`** by default; override **`SENTINEL_MCP_HOST_FILE`** in **`infra/docker/.env`** for your own file.
 
 ### Postgres: existing Compose volumes
 

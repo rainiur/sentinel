@@ -6,6 +6,7 @@ type VersionPayload = {
   version: string;
   service: string;
   writes_disabled?: boolean;
+  rate_limit_rpm?: number;
 };
 
 type McpPayload = {
@@ -71,6 +72,14 @@ export default async function DashboardPage() {
                 Writes disabled:{' '}
                 <strong>{version.writes_disabled ? 'yes (maintenance)' : 'no'}</strong>
               </li>
+              <li>
+                API rate limit:{' '}
+                <strong>
+                  {version.rate_limit_rpm && version.rate_limit_rpm > 0
+                    ? `${version.rate_limit_rpm} req / min / IP (/api/*)`
+                    : 'off'}
+                </strong>
+              </li>
             </>
           ) : null}
           {projectCount !== null ? (
@@ -110,7 +119,8 @@ export default async function DashboardPage() {
           </ul>
         ) : null}
         <p style={{ fontSize: 13, color: '#555' }}>
-          Configure <code>SENTINEL_MCP_CONFIG</code> on the API (see <code>config/mcp.example.json</code>).
+          Docker Compose mounts a host MCP JSON file (see <code>SENTINEL_MCP_HOST_FILE</code> in{' '}
+          <code>infra/docker/.env.example</code>). Locally set <code>SENTINEL_MCP_CONFIG</code> on the API.
         </p>
       </section>
       <p>

@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 
 import db
 import persistence
+import rate_limit_middleware
 from authdeps import clear_auth_settings_cache
 from main import _mem_endpoints, _mem_evidence, _mem_findings, _mem_hypotheses, _mem_projects, app
 
@@ -16,6 +17,9 @@ def isolated_memory(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("SENTINEL_JWT_SECRET", raising=False)
     monkeypatch.delenv("SENTINEL_API_WRITES_DISABLED", raising=False)
     monkeypatch.delenv("SENTINEL_MCP_CONFIG", raising=False)
+    monkeypatch.delenv("SENTINEL_RATE_LIMIT_RPM", raising=False)
+    monkeypatch.delenv("SENTINEL_TRUST_X_FORWARDED_FOR", raising=False)
+    rate_limit_middleware.reset_rate_limit_state()
     db.get_engine.cache_clear()
     clear_auth_settings_cache()
     persistence.clear_memory_stores()

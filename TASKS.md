@@ -1,6 +1,6 @@
 # TASKS.md - Implementation Backlog
 
-Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`** → *Implementation status and remaining gaps*. Last doc sync: **2026-03-26** (MCP config summary API, write kill-switch, dashboard).
+Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`** → *Implementation status and remaining gaps*. Last doc sync: **2026-03-26** (Compose MCP mount, optional /api rate limit, dashboard version fields).
 
 ## 0. Project setup
 - [x] Create monorepo structure (multi-app layout: `apps/*`, `infra/docker`, `integrations/`, `schemas/`, `docs/`) — Completed: 2026-03-26
@@ -96,7 +96,7 @@ Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`*
 ## 9. Policy controls
 - [x] Implement scope manifest validation stub (non-empty `allowed_hosts`; default row on API project create) — Completed: 2026-03-26
 - [ ] Add decision engine for action gating
-- [ ] Add rate limit enforcement
+- [x] Add rate limit enforcement (`SENTINEL_RATE_LIMIT_RPM` in-process sliding window on `/api/*`; `GET /api/version` exposes `rate_limit_rpm`) — Completed: 2026-03-26
 - [ ] Add restricted family policies
 - [x] Emergency **read-only API** via **`SENTINEL_API_WRITES_DISABLED`** (blocks POST/PUT/PATCH/DELETE on **`/api/*`**) — Completed: 2026-03-26
 
@@ -114,6 +114,7 @@ Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`*
 ## 11. Operations
 - [x] Dockerfiles for API, worker, web — Completed: 2025-03-25 (scaffold); production web `runner` stage — Completed: 2026-03-26
 - [x] Docker Compose stack — Completed: 2025-03-25; non-conflicting default host ports + `.env.example` — Completed: 2026-03-26
+- [x] Compose: MCP JSON bind-mount (`SENTINEL_MCP_HOST_FILE` → `/etc/sentinel/mcp.json`; default `config/mcp.example.json`) — Completed: 2026-03-26
 - [x] Compose: Postgres/Redis healthchecks and `depends_on` conditions — Completed: 2026-03-26
 - [x] Document non-production Compose defaults (passwords, Redis, internal trust) in **README** — Completed: 2026-03-26
 - [ ] Production runbook: secrets, network posture, rotation

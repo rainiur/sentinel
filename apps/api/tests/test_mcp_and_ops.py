@@ -72,3 +72,31 @@ def test_version_includes_writes_disabled_flag(client: TestClient) -> None:
     assert r.status_code == 200
     assert "writes_disabled" in r.json()
     assert r.json()["writes_disabled"] is False
+
+
+def test_version_includes_rate_limit_rpm(client: TestClient) -> None:
+    r = client.get("/api/version")
+    assert r.status_code == 200
+    assert r.json().get("rate_limit_rpm") == 0
+
+
+def test_rate_limit_429_after_burst(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("SENTINEL_RATE_LIMIT_RPM", "2")
+    assert client.get("/api/version").status_code == 200
+    assert client.get("/api/version").status_code == 200
+    r = client.get("/api/version")
+    assert r.status_code == 429
+    assert r.json()["detail"]
+    assert "Retry-After" in r.headers
+
+
+def test_health_not_rate_limited(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("SENTINEL_RATE_LIMIT_RPM", "1")
+    assert client.get("/health").status_code == 200
+    assert client.get("/health").status_code == 200
