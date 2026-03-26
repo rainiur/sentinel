@@ -324,6 +324,52 @@ def list_findings_for_project(engine: Engine, project_id: UUID) -> list[dict]:
     return out
 
 
+def insert_evidence_bundle(
+    engine: Engine,
+    project_id: UUID,
+    *,
+    storage_key: str,
+    summary: str | None,
+) -> str:
+    eid = uuid4()
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                """
+                INSERT INTO evidence_bundles (id, project_id, storage_key, summary)
+                VALUES (:id, :pid, :sk, :summary)
+                """
+            ),
+            {
+                "id": eid,
+                "pid": project_id,
+                "sk": storage_key,
+                "summary": summary,
+            },
+        )
+    return str(eid)
+
+
+def list_evidence_bundles(engine: Engine, project_id: UUID) -> list[dict]:
+    with engine.connect() as conn:
+        rows = (
+            conn.execute(
+                text(
+                    """
+                    SELECT id::text, storage_key, summary, created_at
+                    FROM evidence_bundles
+                    WHERE project_id = :pid
+                    ORDER BY created_at DESC
+                    """
+                ),
+                {"pid": project_id},
+            )
+            .mappings()
+            .all()
+        )
+    return [dict(r) for r in rows]
+
+
 def insert_findings(
     engine: Engine,
     project_id: UUID,

@@ -1,6 +1,6 @@
 # Sentinel for Caido - Build Package
 
-**Last updated:** 2026-03-26 (hypothesis reject, **GET /api/projects/{id}/findings**, findings page, query-strip for surface)
+**Last updated:** 2026-03-26 (evidence bundle register/list API + UI; compose security notes)
 
 This package is a starter blueprint and implementation scaffold for a **human-governed, scope-bound web security testing assistant** centered on **Caido**, with a planned **sub-agent** layer that can invoke **allowlisted MCP tools** for testing and evidence workflows under policy and audit (see **`PLAN.md`**).
 
@@ -85,9 +85,11 @@ Defaults avoid binding **5432**, **6379**, **8080**, **3000**, **9000**, and **9
 | MinIO (S3 API) | **30900** | 9000 |
 | MinIO console  | http://localhost:**30901** | 9001 |
 
+**Compose defaults are for local development only:** Postgres, Redis, and MinIO use **weak fixed passwords** in `docker-compose.yml`; Redis has **no ACL**; the API trusts the internal network. Do **not** expose these ports to untrusted networks. For production, use managed databases, secrets injection, TLS, network policies, and strong credentials.
+
 The web image uses the production `runner` stage (`next build` + standalone server). The browser client’s API base URL defaults to `http://localhost:<SENTINEL_API_PORT>`. Set **`SENTINEL_BROWSER_API_URL`** in `infra/docker/.env` if you use another host or scheme.
 
-**Web UI (minimal slice):** **`/`** health probe; **`/projects`** (create form + list); project detail (**surface** after request sync); **`/projects/{id}/hypotheses`** (generate, approve, reject); **`/projects/{id}/findings`** after **`POST /api/sync/findings`** / **`pushFindingsToSentinel`**. Surface **groups** paths that differ only by **query string**.
+**Web UI (minimal slice):** **`/`** health probe; **`/projects`** (create form + list); project detail (**surface** after request sync); **`/projects/{id}/hypotheses`** (generate, approve, reject); **`/projects/{id}/findings`**; **`/projects/{id}/evidence`** (register **metadata** after uploading to S3/MinIO — see **`S3_*`** env in `apps/api/.env.example`). Surface **groups** paths that differ only by **query string**.
 
 ### Postgres: existing Compose volumes
 
@@ -99,6 +101,15 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_endpoints_project_method_route
 ```
 
 Alternatively recreate the Postgres volume (**destructive**): `docker compose down -v` then `up` again.
+
+If you need indexes added after **`idx_findings_project_created`** or **`idx_evidence_bundles_project_created`** (see `schemas/postgres_schema.sql`):
+
+```sql
+CREATE INDEX IF NOT EXISTS idx_findings_project_created
+  ON findings (project_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_evidence_bundles_project_created
+  ON evidence_bundles (project_id, created_at DESC);
+```
 
 ## Optional: run services on the host
 

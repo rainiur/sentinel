@@ -61,6 +61,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
       <p style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
         <Link href={`/projects/${id}/hypotheses`}>Hypotheses queue →</Link>
         <Link href={`/projects/${id}/findings`}>Findings →</Link>
+        <Link href={`/projects/${id}/evidence`}>Evidence →</Link>
       </p>
       <h2 style={{ marginTop: 28, fontSize: '1.1rem' }}>Surface (endpoints)</h2>
       {!surface || surface.endpoints.length === 0 ? (

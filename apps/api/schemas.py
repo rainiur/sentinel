@@ -118,6 +118,30 @@ class FindingsListResponse(BaseModel):
     findings: list[FindingListItem]
 
 
+class RegisterEvidenceRequest(BaseModel):
+    """Register metadata for an object already stored in S3-compatible storage (e.g. MinIO)."""
+
+    storage_key: str = Field(..., min_length=1, max_length=1024)
+    summary: str | None = Field(None, max_length=4000)
+
+
+class EvidenceBundleItem(BaseModel):
+    id: str
+    storage_key: str
+    summary: str | None
+    created_at: datetime | None = None
+
+
+class EvidenceListResponse(BaseModel):
+    project_id: str
+    bundles: list[EvidenceBundleItem]
+
+
+class EvidenceCreatedResponse(BaseModel):
+    created: bool = True
+    id: str
+
+
 class EnqueueJobRequest(BaseModel):
     """Queue a worker job. ``project_id`` is required for ``ingest`` and ``embeddings``."""
 

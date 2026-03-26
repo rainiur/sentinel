@@ -93,6 +93,8 @@ CREATE TABLE evidence_bundles (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE INDEX idx_evidence_bundles_project_created ON evidence_bundles (project_id, created_at DESC);
+
 CREATE TABLE findings (
   id UUID PRIMARY KEY,
   project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,

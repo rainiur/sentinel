@@ -20,6 +20,9 @@ from schemas import (
     CreateProjectResponse,
     EnqueueJobRequest,
     EnqueueJobResponse,
+    EvidenceBundleItem,
+    EvidenceCreatedResponse,
+    EvidenceListResponse,
     FeedbackCreatedResponse,
     FeedbackRequest,
     FindingListItem,
@@ -33,6 +36,7 @@ from schemas import (
     HypothesisListResponse,
     HypothesisRejectResponse,
     ProjectsListResponse,
+    RegisterEvidenceRequest,
     RequestItem,
     RequestSyncPayload,
 )
@@ -47,6 +51,7 @@ _mem_hypotheses: dict[str, dict] = {}
 # project_id -> internal key -> endpoint row (mirrors ``endpoints`` slice of surface in memory mode)
 _mem_endpoints: dict[str, dict[str, dict]] = {}
 _mem_findings: dict[str, list[dict]] = {}
+_mem_evidence: dict[str, list[dict]] = {}
 
 
 def _memory_merge_request_items(project_key: str, items: list[RequestItem]) -> None:
@@ -82,6 +87,22 @@ def _memory_append_findings(project_key: str, items: list[FindingSyncItem]) -> N
                 "created_at": now,
             },
         )
+
+
+def _memory_append_evidence(project_key: str, storage_key: str, summary: str | None) -> str:
+    eid = str(uuid4())
+    now = datetime.now(UTC)
+    bucket = _mem_evidence.setdefault(project_key, [])
+    bucket.insert(
+        0,
+        {
+            "id": eid,
+            "storage_key": storage_key,
+            "summary": summary,
+            "created_at": now,
+        },
+    )
+    return eid
 
 
 @asynccontextmanager
@@ -260,6 +281,64 @@ def list_project_findings(project_id: UUID) -> FindingsListResponse:
         project_id=key,
         findings=[FindingListItem.model_validate(r) for r in rows],
     )
+
+
+@api_router.get(
+    "/projects/{project_id}/evidence",
+    response_model=EvidenceListResponse,
+)
+def list_project_evidence(project_id: UUID) -> EvidenceListResponse:
+    key = str(project_id)
+    engine = db.get_engine()
+    if engine:
+        if not persistence.project_exists(engine, project_id):
+            raise HTTPException(status_code=404, detail="Project not found")
+        rows = persistence.list_evidence_bundles(engine, project_id)
+        return EvidenceListResponse(
+            project_id=key,
+            bundles=[EvidenceBundleItem.model_validate(r) for r in rows],
+        )
+    if key not in _mem_projects:
+        raise HTTPException(status_code=404, detail="Project not found")
+    rows = list(_mem_evidence.get(key, []))
+    return EvidenceListResponse(
+        project_id=key,
+        bundles=[EvidenceBundleItem.model_validate(r) for r in rows],
+    )
+
+
+@api_router.post(
+    "/projects/{project_id}/evidence",
+    status_code=201,
+    response_model=EvidenceCreatedResponse,
+)
+def register_evidence_bundle(
+    project_id: UUID,
+    body: RegisterEvidenceRequest,
+) -> EvidenceCreatedResponse:
+    storage_key = body.storage_key.strip()
+    if not storage_key or "\n" in storage_key or "\r" in storage_key:
+        raise HTTPException(status_code=422, detail="Invalid storage_key")
+    key = str(project_id)
+    engine = db.get_engine()
+    if engine:
+        if not persistence.project_exists(engine, project_id):
+            raise HTTPException(status_code=404, detail="Project not found")
+        ensure_project_scope_allows_writes(engine, project_id)
+        eid = persistence.insert_evidence_bundle(
+            engine,
+            project_id,
+            storage_key=storage_key,
+            summary=body.summary,
+        )
+        logutil.emit("evidence_registered", project_id=key, evidence_id=eid)
+        return EvidenceCreatedResponse(id=eid)
+    if key not in _mem_projects:
+        raise HTTPException(status_code=404, detail="Project not found")
+    ensure_project_scope_allows_writes(None, project_id)
+    eid = _memory_append_evidence(key, storage_key, body.summary)
+    logutil.emit("evidence_registered", project_id=key, evidence_id=eid, persistence="memory")
+    return EvidenceCreatedResponse(id=eid)
 
 
 @api_router.post("/sync/requests", status_code=202)

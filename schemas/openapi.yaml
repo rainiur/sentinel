@@ -165,6 +165,49 @@ paths:
           description: OK
         '404':
           description: Project not found
+  /api/projects/{project_id}/evidence:
+    get:
+      summary: List registered evidence bundles (S3 keys / metadata)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: project_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+        '404':
+          description: Project not found
+    post:
+      summary: Register evidence metadata (object stored separately in S3-compatible storage)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: project_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterEvidenceRequest'
+      responses:
+        '201':
+          description: Created
+        '404':
+          description: Project not found
+        '409':
+          description: Scope manifest missing or invalid for the project
+        '422':
+          description: Invalid body
   /api/hypotheses/generate:
     post:
       summary: Generate bounded hypotheses
@@ -349,6 +392,50 @@ components:
           type: string
         notes:
           type: string
+    RegisterEvidenceRequest:
+      type: object
+      required: [storage_key]
+      properties:
+        storage_key:
+          type: string
+          maxLength: 1024
+        summary:
+          type: string
+          maxLength: 4000
+    EvidenceBundleItem:
+      type: object
+      required: [id, storage_key]
+      properties:
+        id:
+          type: string
+          format: uuid
+        storage_key:
+          type: string
+        summary:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+    EvidenceListResponse:
+      type: object
+      required: [project_id, bundles]
+      properties:
+        project_id:
+          type: string
+          format: uuid
+        bundles:
+          type: array
+          items:
+            $ref: '#/components/schemas/EvidenceBundleItem'
+    EvidenceCreatedResponse:
+      type: object
+      required: [id, created]
+      properties:
+        created:
+          type: boolean
+        id:
+          type: string
+          format: uuid
     EnqueueJobRequest:
       type: object
       required: [type]

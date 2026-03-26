@@ -172,6 +172,31 @@ def test_surface_collapses_query_string_variants(client: TestClient) -> None:
     assert s["endpoints"][0]["route_pattern"] == "/y"
 
 
+def test_evidence_register_and_list_memory(client: TestClient) -> None:
+    pid = client.post("/api/projects", json={"name": "ev"}).json()["id"]
+    reg = client.post(
+        f"/api/projects/{pid}/evidence",
+        json={"storage_key": f"projects/{pid[:8]}/bundle-1.json", "summary": "cap"},
+    )
+    assert reg.status_code == 201
+    eid = reg.json()["id"]
+    lst = client.get(f"/api/projects/{pid}/evidence")
+    assert lst.status_code == 200
+    bundles = lst.json()["bundles"]
+    assert len(bundles) == 1
+    assert bundles[0]["id"] == eid
+    assert bundles[0]["storage_key"].endswith("bundle-1.json")
+
+
+def test_evidence_invalid_storage_key_rejected(client: TestClient) -> None:
+    pid = client.post("/api/projects", json={"name": "ev2"}).json()["id"]
+    bad = client.post(
+        f"/api/projects/{pid}/evidence",
+        json={"storage_key": "bad\nkey"},
+    )
+    assert bad.status_code == 422
+
+
 def test_list_findings_after_sync_memory(client: TestClient) -> None:
     pid = client.post("/api/projects", json={"name": "f"}).json()["id"]
     sf = client.post(
