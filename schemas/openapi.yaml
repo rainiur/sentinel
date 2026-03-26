@@ -148,6 +148,23 @@ paths:
           description: OK
         '404':
           description: Project not found
+  /api/projects/{project_id}/findings:
+    get:
+      summary: List findings for a project
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: project_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+        '404':
+          description: Project not found
   /api/hypotheses/generate:
     post:
       summary: Generate bounded hypotheses
@@ -179,8 +196,29 @@ paths:
       responses:
         '200':
           description: Approved
+        '404':
+          description: Hypothesis not found
         '409':
-          description: Scope manifest missing or invalid for the project
+          description: Scope invalid, or hypothesis not in queued state
+  /api/hypotheses/{hypothesis_id}/reject:
+    post:
+      summary: Reject a queued hypothesis
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: hypothesis_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Rejected
+        '404':
+          description: Hypothesis not found
+        '409':
+          description: Scope invalid, or hypothesis not in queued state
   /api/feedback:
     post:
       summary: Record analyst feedback

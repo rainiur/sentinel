@@ -98,6 +98,26 @@ class HypothesisApproveResponse(BaseModel):
     hypothesis_id: str
 
 
+class HypothesisRejectResponse(BaseModel):
+    status: Literal["rejected"] = "rejected"
+    hypothesis_id: str
+
+
+class FindingListItem(BaseModel):
+    id: str
+    source: str
+    bug_class: str
+    severity: str | None = None
+    confidence: float | None = None
+    status: str
+    created_at: datetime | None = None
+
+
+class FindingsListResponse(BaseModel):
+    project_id: str
+    findings: list[FindingListItem]
+
+
 class EnqueueJobRequest(BaseModel):
     """Queue a worker job. ``project_id`` is required for ``ingest`` and ``embeddings``."""
 

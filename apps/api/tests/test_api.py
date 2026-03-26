@@ -124,6 +124,73 @@ def test_hypothesis_flow(client: TestClient) -> None:
     ap = client.post(f"/api/hypotheses/{ids[0]}/approve")
     assert ap.status_code == 200
     assert ap.json()["status"] == "approved"
+    again = client.post(f"/api/hypotheses/{ids[0]}/approve")
+    assert again.status_code == 409
+
+
+def test_hypothesis_reject_flow(client: TestClient) -> None:
+    pid = client.post("/api/projects", json={"name": "rej"}).json()["id"]
+    gen = client.post(
+        "/api/hypotheses/generate",
+        json={"project_id": pid, "max_results": 1},
+    )
+    hid = gen.json()["hypothesis_ids"][0]
+    rj = client.post(f"/api/hypotheses/{hid}/reject")
+    assert rj.status_code == 200
+    assert rj.json()["status"] == "rejected"
+    again = client.post(f"/api/hypotheses/{hid}/reject")
+    assert again.status_code == 409
+
+
+def test_surface_collapses_query_string_variants(client: TestClient) -> None:
+    pid = client.post("/api/projects", json={"name": "q"}).json()["id"]
+    sync = client.post(
+        "/api/sync/requests",
+        json={
+            "project_id": pid,
+            "requests": [
+                {
+                    "caido_request_id": "q1",
+                    "method": "GET",
+                    "url": "https://x/y?a=1",
+                    "host": "x",
+                    "path": "/y?a=1",
+                },
+                {
+                    "caido_request_id": "q2",
+                    "method": "GET",
+                    "url": "https://x/y?b=2",
+                    "host": "x",
+                    "path": "/y?b=2",
+                },
+            ],
+        },
+    )
+    assert sync.status_code == 202
+    s = client.get(f"/api/projects/{pid}/surface").json()
+    assert len(s["endpoints"]) == 1
+    assert s["endpoints"][0]["route_pattern"] == "/y"
+
+
+def test_list_findings_after_sync_memory(client: TestClient) -> None:
+    pid = client.post("/api/projects", json={"name": "f"}).json()["id"]
+    sf = client.post(
+        "/api/sync/findings",
+        json={
+            "project_id": pid,
+            "findings": [
+                {"source": "caido", "bug_class": "xss", "severity": "medium"},
+            ],
+        },
+    )
+    assert sf.status_code == 202
+    r = client.get(f"/api/projects/{pid}/findings")
+    assert r.status_code == 200
+    data = r.json()
+    assert data["project_id"] == pid
+    assert len(data["findings"]) == 1
+    assert data["findings"][0]["bug_class"] == "xss"
+    assert data["findings"][0]["status"] == "draft"
 
 
 def test_feedback_no_echo(client: TestClient) -> None:

@@ -24,6 +24,14 @@ def clear_memory_stores() -> None:
     _mem_scope_project_ids.clear()
 
 
+def normalize_route_pattern(path: str | None) -> str:
+    """Strip query string for endpoint grouping; default ``/`` when empty."""
+    raw = (path or "").strip()
+    if not raw:
+        return "/"
+    return raw.split("?", 1)[0].strip() or "/"
+
+
 def register_memory_scope(project_id: str) -> None:
     _mem_scope_project_ids.add(project_id)
 
@@ -232,8 +240,7 @@ def fetch_surface(engine: Engine, project_id: UUID) -> dict:
 
 def _upsert_endpoint_from_request(conn: Connection, project_id: UUID, item: RequestItem) -> None:
     """Merge observed (method, path) into ``endpoints`` for surface API (idempotent)."""
-    raw_path = (item.path or "").strip()
-    route = raw_path if raw_path else "/"
+    route = normalize_route_pattern(item.path)
     method = (item.method or "GET").strip().upper() or "GET"
     conn.execute(
         text(
@@ -289,6 +296,32 @@ def insert_caido_requests(
             _upsert_endpoint_from_request(conn, project_id, item)
             n += 1
     return n
+
+
+def list_findings_for_project(engine: Engine, project_id: UUID) -> list[dict]:
+    with engine.connect() as conn:
+        rows = (
+            conn.execute(
+                text(
+                    """
+                    SELECT id::text, source, bug_class, severity, confidence, status, created_at
+                    FROM findings
+                    WHERE project_id = :pid
+                    ORDER BY created_at DESC
+                    """
+                ),
+                {"pid": project_id},
+            )
+            .mappings()
+            .all()
+        )
+    out: list[dict] = []
+    for r in rows:
+        d = dict(r)
+        if d.get("confidence") is not None:
+            d["confidence"] = float(d["confidence"])
+        out.append(d)
+    return out
 
 
 def insert_findings(
@@ -353,7 +386,22 @@ def approve_hypothesis(engine: Engine, hypothesis_id: UUID) -> bool:
             text(
                 """
                 UPDATE hypotheses SET status = 'approved'
-                WHERE id = :id
+                WHERE id = :id AND status = 'queued'
+                RETURNING id
+                """
+            ),
+            {"id": hypothesis_id},
+        )
+        return result.fetchone() is not None
+
+
+def reject_hypothesis(engine: Engine, hypothesis_id: UUID) -> bool:
+    with engine.begin() as conn:
+        result = conn.execute(
+            text(
+                """
+                UPDATE hypotheses SET status = 'rejected'
+                WHERE id = :id AND status = 'queued'
                 RETURNING id
                 """
             ),

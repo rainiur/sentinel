@@ -1,6 +1,6 @@
 # TASKS.md - Implementation Backlog
 
-Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`** → *Implementation status and remaining gaps*. Last doc sync: **2026-03-26** (vertical slice: sync → surface, web, bridge HTTP client).
+Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`** → *Implementation status and remaining gaps*. Last doc sync: **2026-03-26** (reject API, findings list, surface path normalization, findings UI).
 
 ## 0. Project setup
 - [x] Create monorepo structure (multi-app layout: `apps/*`, `infra/docker`, `integrations/`, `schemas/`, `docs/`) — Completed: 2026-03-26
@@ -22,7 +22,7 @@ Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`*
 - [x] Align request/response models with `schemas/openapi.yaml` (Pydantic; not raw `dict` on sync/feedback/hypotheses) — Completed: 2026-03-26
 - [x] Keep OpenAPI and routes in sync in CI (contract tests or Spectral) — Completed: 2026-03-26 (same as §0 OpenAPI parity tests)
 - [x] Implement `POST /api/hypotheses/{hypothesis_id}/approve` per OpenAPI — Completed: 2026-03-26
-- [ ] Add hypothesis reject/cancel APIs if/when spec expands
+- [x] **`POST /api/hypotheses/{id}/reject`** (queued-only; approve/reject return **409** if not queued) — Completed: 2026-03-26
 - [x] Add JWT (HS256) middleware and env toggles (`SENTINEL_REQUIRE_AUTH`, `SENTINEL_JWT_SECRET`) — Completed: 2026-03-26
 - [ ] Add OIDC / JWKS verification (beyond shared-secret JWT)
 - [x] Add RBAC model (`analyst` / `admin` claims; admin implies full analyst access) — Completed: 2026-03-26
@@ -55,7 +55,8 @@ Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`*
 
 ## 4. Surface mapping
 - [x] Derive **`endpoints`** rows from synced requests (method + path upsert; powers **`GET .../surface`**) — Completed: 2026-03-26
-- [ ] Build request normalization pipeline (route patterns, params; beyond raw path)
+- [x] Strip **query string** from paths when upserting **endpoints** / memory surface — Completed: 2026-03-26
+- [ ] Build request normalization pipeline (route patterns, params; beyond path + query strip)
 - [ ] Extract route patterns, parameters, auth contexts (worker/analytics)
 - [ ] Build endpoint summary documents for retrieval
 - [x] Expose `GET /api/projects/{project_id}/surface` (DB-backed when Postgres configured; empty until endpoints populated) — Completed: 2026-03-26
@@ -66,8 +67,8 @@ Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`*
 - [ ] Implement retrieval-augmented prompt assembly
 - [ ] Add confidence and priority scoring (beyond stub rows)
 - [x] Approve API — Completed: 2026-03-26 (see §1)
-- [ ] Add reject/review queue APIs and OpenAPI updates
-- [ ] Add UI queue and detail drawer
+- [x] Reject API + OpenAPI; web **Reject** control on hypotheses — Completed: 2026-03-26
+- [ ] Review queue APIs; hypothesis detail drawer
 
 ## 6. Evidence pipeline
 - [ ] Store request/response bundles in object storage
@@ -100,7 +101,7 @@ Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`*
 
 ## 10. Frontend
 - [ ] Add dashboard page
-- [x] **Projects** list (`/projects`) with **create form**, **project detail** with surface table, **hypotheses** queue (`/projects/{id}/hypotheses` with generate + approve) — Completed: 2026-03-26
+- [x] **Projects** list (`/projects`) with **create form**, **project detail** (surface + links), **hypotheses** (generate + approve/reject), **findings** (`/projects/{id}/findings`) — Completed: 2026-03-26
 - [ ] Add surface inventory page (filters, export)
 - [ ] Rich hypotheses queue (detail drawer, reject)
 - [ ] Add evidence and findings page

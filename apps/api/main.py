@@ -22,12 +22,16 @@ from schemas import (
     EnqueueJobResponse,
     FeedbackCreatedResponse,
     FeedbackRequest,
+    FindingListItem,
+    FindingsListResponse,
+    FindingSyncItem,
     FindingSyncPayload,
     HypothesisApproveResponse,
     HypothesisGenerateAccepted,
     HypothesisGenerationRequest,
     HypothesisListItem,
     HypothesisListResponse,
+    HypothesisRejectResponse,
     ProjectsListResponse,
     RequestItem,
     RequestSyncPayload,
@@ -42,12 +46,13 @@ _mem_projects: dict[str, dict] = {}
 _mem_hypotheses: dict[str, dict] = {}
 # project_id -> internal key -> endpoint row (mirrors ``endpoints`` slice of surface in memory mode)
 _mem_endpoints: dict[str, dict[str, dict]] = {}
+_mem_findings: dict[str, list[dict]] = {}
 
 
 def _memory_merge_request_items(project_key: str, items: list[RequestItem]) -> None:
     bucket = _mem_endpoints.setdefault(project_key, {})
     for item in items:
-        route = (item.path or "").strip() or "/"
+        route = persistence.normalize_route_pattern(item.path)
         method = (item.method or "GET").strip().upper() or "GET"
         ik = f"{method}\x00{route}"
         if ik not in bucket:
@@ -58,6 +63,25 @@ def _memory_merge_request_items(project_key: str, items: list[RequestItem]) -> N
                 "content_type": None,
                 "auth_required": None,
             }
+
+
+def _memory_append_findings(project_key: str, items: list[FindingSyncItem]) -> None:
+    bucket = _mem_findings.setdefault(project_key, [])
+    for it in items:
+        fid = str(uuid4())
+        now = datetime.now(UTC)
+        bucket.insert(
+            0,
+            {
+                "id": fid,
+                "source": it.source,
+                "bug_class": it.bug_class,
+                "severity": it.severity,
+                "confidence": it.confidence,
+                "status": "draft",
+                "created_at": now,
+            },
+        )
 
 
 @asynccontextmanager
@@ -214,6 +238,30 @@ def list_project_hypotheses(project_id: UUID) -> HypothesisListResponse:
     )
 
 
+@api_router.get(
+    "/projects/{project_id}/findings",
+    response_model=FindingsListResponse,
+)
+def list_project_findings(project_id: UUID) -> FindingsListResponse:
+    key = str(project_id)
+    engine = db.get_engine()
+    if engine:
+        if not persistence.project_exists(engine, project_id):
+            raise HTTPException(status_code=404, detail="Project not found")
+        rows = persistence.list_findings_for_project(engine, project_id)
+        return FindingsListResponse(
+            project_id=key,
+            findings=[FindingListItem.model_validate(r) for r in rows],
+        )
+    if key not in _mem_projects:
+        raise HTTPException(status_code=404, detail="Project not found")
+    rows = list(_mem_findings.get(key, []))
+    return FindingsListResponse(
+        project_id=key,
+        findings=[FindingListItem.model_validate(r) for r in rows],
+    )
+
+
 @api_router.post("/sync/requests", status_code=202)
 def sync_requests(payload: RequestSyncPayload) -> dict:
     engine = db.get_engine()
@@ -256,6 +304,7 @@ def sync_findings(payload: FindingSyncPayload) -> dict:
     if key not in _mem_projects:
         raise HTTPException(status_code=404, detail="Project not found")
     ensure_project_scope_allows_writes(None, payload.project_id)
+    _memory_append_findings(key, payload.findings)
     logutil.emit(
         "sync_findings",
         project_id=key,
@@ -330,14 +379,55 @@ def approve_hypothesis(hypothesis_id: UUID) -> HypothesisApproveResponse:
         if persistence.approve_hypothesis(engine, hypothesis_id):
             logutil.emit("hypothesis_approved", hypothesis_id=hid)
             return HypothesisApproveResponse(hypothesis_id=hid, status="approved")
-        raise HTTPException(status_code=404, detail="Hypothesis not found")
+        raise HTTPException(
+            status_code=409,
+            detail="Hypothesis not in queued state or not found",
+        )
     row = _mem_hypotheses.get(hid)
     if not row:
         raise HTTPException(status_code=404, detail="Hypothesis not found")
     ensure_project_scope_allows_writes(None, UUID(row["project_id"]))
+    if row.get("status") != "queued":
+        raise HTTPException(
+            status_code=409,
+            detail="Hypothesis not in queued state",
+        )
     row["status"] = "approved"
     logutil.emit("hypothesis_approved", hypothesis_id=hid, persistence="memory")
     return HypothesisApproveResponse(hypothesis_id=hid, status="approved")
+
+
+@api_router.post(
+    "/hypotheses/{hypothesis_id}/reject",
+    response_model=HypothesisRejectResponse,
+)
+def reject_hypothesis(hypothesis_id: UUID) -> HypothesisRejectResponse:
+    hid = str(hypothesis_id)
+    engine = db.get_engine()
+    if engine:
+        pid = persistence.fetch_hypothesis_project_id(engine, hypothesis_id)
+        if pid is None:
+            raise HTTPException(status_code=404, detail="Hypothesis not found")
+        ensure_project_scope_allows_writes(engine, pid)
+        if persistence.reject_hypothesis(engine, hypothesis_id):
+            logutil.emit("hypothesis_rejected", hypothesis_id=hid)
+            return HypothesisRejectResponse(hypothesis_id=hid)
+        raise HTTPException(
+            status_code=409,
+            detail="Hypothesis not in queued state or not found",
+        )
+    row = _mem_hypotheses.get(hid)
+    if not row:
+        raise HTTPException(status_code=404, detail="Hypothesis not found")
+    ensure_project_scope_allows_writes(None, UUID(row["project_id"]))
+    if row.get("status") != "queued":
+        raise HTTPException(
+            status_code=409,
+            detail="Hypothesis not in queued state",
+        )
+    row["status"] = "rejected"
+    logutil.emit("hypothesis_rejected", hypothesis_id=hid, persistence="memory")
+    return HypothesisRejectResponse(hypothesis_id=hid)
 
 
 @api_router.post("/feedback", status_code=201, response_model=FeedbackCreatedResponse)

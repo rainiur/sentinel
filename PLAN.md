@@ -210,7 +210,7 @@ The repo is a **runnable stack** (Docker Compose, Postgres init schema, API with
 - **Caido bridge**: Repo includes **`pushRequestsToSentinel`** and **`pushFindingsToSentinel`** (HTTP to **`/api/sync/*`**); Caido SDK wiring and signed callbacks remain TODO.
 - **Frontend**: **Projects** list, project **surface** (endpoints after sync), and **hypotheses** queue pages exist; no full dashboard, project CRUD forms, or richer analyst workflows yet.
 - **Object storage**: MinIO wired in compose; API does not yet store evidence bundles in S3-compatible storage.
-- **Hypotheses**: Stub generation and approve only; no reject/cancel, ranking, or RAG-backed proposals.
+- **Hypotheses**: Stub generation; **approve** and **reject** (queued-only); no ranking or RAG-backed proposals yet.
 - **MCP / sub-agents**: No MCP registry, client, or audited tool-call path in code yet; orchestration remains single-process API/worker without an agent runtime. **Config contract** is **`SENTINEL_MCP_CONFIG`** → JSON with **`mcpServers`** (Cursor-style); see **`config/mcp.example.json`**. Wiring the client and allowlist is still TODO.
 - **Engineering**: Prometheus/runbooks and optional Python lockfile strategy still open; **OpenAPI↔route parity** covered by API pytest (`test_openapi_contract.py`). CI, `.gitignore`, EditorConfig, and pre-commit are in place.
 - **Docs / process**: `docs/threat_model.md` vs org-standard `THREATMODEL.md` naming still to align; `TASKS.md` may need owner/priority/dates when formal tracking starts.

@@ -107,6 +107,8 @@ CREATE TABLE findings (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE INDEX idx_findings_project_created ON findings (project_id, created_at DESC);
+
 CREATE TABLE hypotheses (
   id UUID PRIMARY KEY,
   project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
