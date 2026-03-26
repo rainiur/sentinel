@@ -1,6 +1,6 @@
 # Sentinel for Caido - Build Package
 
-**Last updated:** 2026-03-26
+**Last updated:** 2026-03-26 (vertical slice: sync → surface endpoints, web projects/hypotheses, bridge HTTP client)
 
 This package is a starter blueprint and implementation scaffold for a **human-governed, scope-bound web security testing assistant** centered on **Caido**, with a planned **sub-agent** layer that can invoke **allowlisted MCP tools** for testing and evidence workflows under policy and audit (see **`PLAN.md`**).
 
@@ -79,13 +79,26 @@ Defaults avoid binding **5432**, **6379**, **8080**, **3000**, **9000**, and **9
 | Service        | Default host URL / port | Container |
 |----------------|-------------------------|-----------|
 | Web UI         | http://localhost:**30700** | 3000 |
-| API            | http://localhost:**30880** — `GET /health`, `GET /ready`, `GET /api/version` | 8080 |
+| API            | http://localhost:**30880** — `GET /health`, `GET /ready`, `GET /api/version`, `GET /api/projects`, `POST /api/sync/requests`, … | 8080 |
 | Postgres       | **30432** | 5432 |
 | Redis          | **30379** | 6379 |
 | MinIO (S3 API) | **30900** | 9000 |
 | MinIO console  | http://localhost:**30901** | 9001 |
 
 The web image uses the production `runner` stage (`next build` + standalone server). The browser client’s API base URL defaults to `http://localhost:<SENTINEL_API_PORT>`. Set **`SENTINEL_BROWSER_API_URL`** in `infra/docker/.env` if you use another host or scheme.
+
+**Web UI (minimal slice):** **`/`** health probe; **`/projects`** lists projects; project detail shows **surface** endpoints after **`POST /api/sync/requests`** (or Caido **`pushRequestsToSentinel`**); **`/projects/{id}/hypotheses`** lists stub hypotheses, generate, and approve.
+
+### Postgres: existing Compose volumes
+
+If your database was created **before** the unique index **`uq_endpoints_project_method_route`** on **`endpoints`** (see `schemas/postgres_schema.sql`), apply it once:
+
+```sql
+CREATE UNIQUE INDEX IF NOT EXISTS uq_endpoints_project_method_route
+  ON endpoints (project_id, method, route_pattern);
+```
+
+Alternatively recreate the Postgres volume (**destructive**): `docker compose down -v` then `up` again.
 
 ## Optional: run services on the host
 

@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 async function getHealth(): Promise<string> {
   try {
     const base = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080';
@@ -17,8 +19,13 @@ export default async function Page() {
       <h1>Sentinel for Caido</h1>
       <p>Authorized testing assistant control plane.</p>
       <ul>
-        <li>API health: <strong>{health}</strong></li>
-        <li>Core pages to build next: Projects, Surface, Hypotheses, Evidence, Learning, Research, Policies</li>
+        <li>
+          API health: <strong>{health}</strong>
+        </li>
+        <li>
+          <Link href="/projects">Projects</Link> — list, surface (endpoints after sync), and hypotheses queue
+        </li>
+        <li>Still to build: Evidence, Learning, Research, Policies</li>
       </ul>
     </main>
   );

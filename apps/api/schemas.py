@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID
 
@@ -17,6 +18,25 @@ class CreateProjectResponse(BaseModel):
     id: str
     name: str
     owner_team: str | None = None
+
+
+class ProjectsListResponse(BaseModel):
+    projects: list[CreateProjectResponse]
+
+
+class HypothesisListItem(BaseModel):
+    id: str
+    title: str
+    bug_class: str
+    status: str
+    priority_score: float | None = None
+    confidence_score: float | None = None
+    created_at: datetime | None = None
+
+
+class HypothesisListResponse(BaseModel):
+    project_id: str
+    hypotheses: list[HypothesisListItem]
 
 
 class RequestItem(BaseModel):

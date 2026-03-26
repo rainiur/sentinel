@@ -73,6 +73,8 @@ CREATE TABLE endpoints (
   source_confidence NUMERIC(5,4) NOT NULL DEFAULT 0.5000
 );
 
+CREATE UNIQUE INDEX uq_endpoints_project_method_route ON endpoints (project_id, method, route_pattern);
+
 CREATE TABLE parameters (
   id UUID PRIMARY KEY,
   endpoint_id UUID NOT NULL REFERENCES endpoints(id) ON DELETE CASCADE,

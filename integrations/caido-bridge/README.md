@@ -16,5 +16,15 @@ Implementation backlog for the bridge lives in the repo root **`TASKS.md`** (sec
 - `packages/backend` - export/sync logic and bridge RPC
 - `packages/shared` - shared types and schemas
 
+## Sentinel HTTP sync (no Caido SDK required for this piece)
+
+`packages/backend/src/sentinel-sync.ts` exports **`pushRequestsToSentinel(cfg, requests)`**, which `POST`s to **`/api/sync/requests`** with the same JSON shape as the OpenAPI **`RequestSyncPayload`**. Configure:
+
+- **`apiBaseUrl`** — e.g. `http://localhost:30880` when using default Compose API port
+- **`projectId`** — Sentinel project UUID (create via `POST /api/projects` or after listing projects in the web UI)
+- **`bearerToken`** — optional; required if the API runs with **`SENTINEL_REQUIRE_AUTH=true`**
+
+Map proxy traffic to **`SentinelRequest`** (see `packages/shared/src/types.ts`), then call **`pushRequestsToSentinel`**. Wire that from Caido’s backend plugin hooks when you integrate the official SDK.
+
 ## Implementation notes
-Use current Caido plugin and workflow SDK references while filling in the generated TODOs.
+Use current Caido plugin and workflow SDK references while filling in the generated TODOs in `packages/backend/src/index.ts` and `packages/frontend/src/index.ts`.

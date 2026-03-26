@@ -1,6 +1,6 @@
 # TASKS.md - Implementation Backlog
 
-Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`** → *Implementation status and remaining gaps*. Last doc sync: **2026-03-26** (MCP config file model).
+Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`** → *Implementation status and remaining gaps*. Last doc sync: **2026-03-26** (vertical slice: sync → surface, web, bridge HTTP client).
 
 ## 0. Project setup
 - [x] Create monorepo structure (multi-app layout: `apps/*`, `infra/docker`, `integrations/`, `schemas/`, `docs/`) — Completed: 2026-03-26
@@ -45,7 +45,8 @@ Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`*
 
 ## 3. Caido integration
 - [ ] Create plugin manifest and config (expand beyond skeleton)
-- [ ] Add backend sync endpoints in plugin
+- [x] Backend **HTTP** helper **`pushRequestsToSentinel`** → **`POST /api/sync/requests`** (`integrations/caido-bridge/packages/backend/src/sentinel-sync.ts`) — Completed: 2026-03-26
+- [ ] Wire Caido SDK: export selected requests → **`pushRequestsToSentinel`**
 - [ ] Add frontend panel for project binding
 - [ ] Implement normalized request export
 - [ ] Implement findings export
@@ -53,7 +54,8 @@ Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`*
 - [ ] Add signed callback verification between Caido and API
 
 ## 4. Surface mapping
-- [ ] Build request normalization pipeline (beyond storing raw `caido_requests`)
+- [x] Derive **`endpoints`** rows from synced requests (method + path upsert; powers **`GET .../surface`**) — Completed: 2026-03-26
+- [ ] Build request normalization pipeline (route patterns, params; beyond raw path)
 - [ ] Extract route patterns, parameters, auth contexts (worker/analytics)
 - [ ] Build endpoint summary documents for retrieval
 - [x] Expose `GET /api/projects/{project_id}/surface` (DB-backed when Postgres configured; empty until endpoints populated) — Completed: 2026-03-26
@@ -98,9 +100,9 @@ Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`*
 
 ## 10. Frontend
 - [ ] Add dashboard page
-- [ ] Add project detail page
-- [ ] Add surface inventory page
-- [ ] Add hypotheses queue page
+- [x] **Projects** list (`/projects`), **project detail** with surface table, **hypotheses** queue (`/projects/{id}/hypotheses` with generate + approve) — Completed: 2026-03-26
+- [ ] Add surface inventory page (filters, export)
+- [ ] Rich hypotheses queue (detail drawer, reject)
 - [ ] Add evidence and findings page
 - [ ] Add learning metrics page
 - [ ] Add research curator page

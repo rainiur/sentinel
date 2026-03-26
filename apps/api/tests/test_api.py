@@ -37,6 +37,61 @@ def test_project_crud_and_surface(client: TestClient) -> None:
     assert s.json()["endpoints"] == []
 
 
+def test_list_projects_includes_created(client: TestClient) -> None:
+    client.post("/api/projects", json={"name": "listed"})
+    r = client.get("/api/projects")
+    assert r.status_code == 200
+    names = {p["name"] for p in r.json()["projects"]}
+    assert "listed" in names
+
+
+def test_sync_requests_populates_surface_in_memory(client: TestClient) -> None:
+    pid = client.post("/api/projects", json={"name": "surf"}).json()["id"]
+    sync = client.post(
+        "/api/sync/requests",
+        json={
+            "project_id": pid,
+            "requests": [
+                {
+                    "caido_request_id": "r1",
+                    "method": "GET",
+                    "url": "https://example.com/api/foo",
+                    "host": "example.com",
+                    "path": "/api/foo",
+                },
+                {
+                    "caido_request_id": "r2",
+                    "method": "POST",
+                    "url": "https://example.com/api/foo",
+                    "host": "example.com",
+                    "path": "/api/foo",
+                },
+            ],
+        },
+    )
+    assert sync.status_code == 202
+    s = client.get(f"/api/projects/{pid}/surface")
+    assert s.status_code == 200
+    body = s.json()
+    assert len(body["endpoints"]) == 2
+    methods = {e["method"] for e in body["endpoints"]}
+    assert methods == {"GET", "POST"}
+
+
+def test_list_hypotheses_after_generate(client: TestClient) -> None:
+    pid = client.post("/api/projects", json={"name": "hyp"}).json()["id"]
+    gen = client.post(
+        "/api/hypotheses/generate",
+        json={"project_id": pid, "max_results": 2},
+    )
+    assert gen.status_code == 202
+    r = client.get(f"/api/projects/{pid}/hypotheses")
+    assert r.status_code == 200
+    assert r.json()["project_id"] == pid
+    assert len(r.json()["hypotheses"]) == 2
+    assert {h["status"] for h in r.json()["hypotheses"]} == {"queued"}
+
+
 def test_sync_requires_project(client: TestClient) -> None:
     fake = str(uuid.uuid4())
     r = client.post(

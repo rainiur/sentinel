@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from dotenv import load_dotenv
@@ -25,6 +26,10 @@ from schemas import (
     HypothesisApproveResponse,
     HypothesisGenerateAccepted,
     HypothesisGenerationRequest,
+    HypothesisListItem,
+    HypothesisListResponse,
+    ProjectsListResponse,
+    RequestItem,
     RequestSyncPayload,
 )
 from scopeguard import ensure_project_scope_allows_writes
@@ -35,6 +40,24 @@ APP_VERSION = "0.1.0"
 
 _mem_projects: dict[str, dict] = {}
 _mem_hypotheses: dict[str, dict] = {}
+# project_id -> internal key -> endpoint row (mirrors ``endpoints`` slice of surface in memory mode)
+_mem_endpoints: dict[str, dict[str, dict]] = {}
+
+
+def _memory_merge_request_items(project_key: str, items: list[RequestItem]) -> None:
+    bucket = _mem_endpoints.setdefault(project_key, {})
+    for item in items:
+        route = (item.path or "").strip() or "/"
+        method = (item.method or "GET").strip().upper() or "GET"
+        ik = f"{method}\x00{route}"
+        if ik not in bucket:
+            bucket[ik] = {
+                "id": str(uuid4()),
+                "method": method,
+                "route_pattern": route,
+                "content_type": None,
+                "auth_required": None,
+            }
 
 
 @asynccontextmanager
@@ -118,6 +141,16 @@ def create_project(payload: CreateProjectRequest) -> CreateProjectResponse:
     return CreateProjectResponse(**row)
 
 
+@api_router.get("/projects", response_model=ProjectsListResponse)
+def list_projects_endpoint() -> ProjectsListResponse:
+    engine = db.get_engine()
+    if engine:
+        rows = persistence.list_projects(engine)
+        return ProjectsListResponse(projects=[CreateProjectResponse(**r) for r in rows])
+    ordered = sorted(_mem_projects.values(), key=lambda r: r["name"])
+    return ProjectsListResponse(projects=[CreateProjectResponse(**r) for r in ordered])
+
+
 @api_router.get("/projects/{project_id}")
 def get_project(project_id: UUID) -> dict:
     engine = db.get_engine()
@@ -143,12 +176,42 @@ def get_surface(project_id: UUID) -> dict:
     key = str(project_id)
     if key not in _mem_projects:
         raise HTTPException(status_code=404, detail="Project not found")
+    ep_map = _mem_endpoints.get(key, {})
+    endpoints = sorted(ep_map.values(), key=lambda e: (e["route_pattern"], e["method"]))
     return {
         "project_id": key,
-        "endpoints": [],
+        "endpoints": endpoints,
         "parameters": [],
         "auth_contexts": [],
     }
+
+
+@api_router.get(
+    "/projects/{project_id}/hypotheses",
+    response_model=HypothesisListResponse,
+)
+def list_project_hypotheses(project_id: UUID) -> HypothesisListResponse:
+    key = str(project_id)
+    engine = db.get_engine()
+    if engine:
+        if not persistence.project_exists(engine, project_id):
+            raise HTTPException(status_code=404, detail="Project not found")
+        rows = persistence.list_hypotheses_for_project(engine, project_id)
+        return HypothesisListResponse(
+            project_id=key,
+            hypotheses=[HypothesisListItem.model_validate(r) for r in rows],
+        )
+    if key not in _mem_projects:
+        raise HTTPException(status_code=404, detail="Project not found")
+    rows = [h for h in _mem_hypotheses.values() if h["project_id"] == key]
+    rows.sort(
+        key=lambda h: h.get("created_at") or datetime(1970, 1, 1, tzinfo=UTC),
+        reverse=True,
+    )
+    return HypothesisListResponse(
+        project_id=key,
+        hypotheses=[HypothesisListItem.model_validate(h) for h in rows],
+    )
 
 
 @api_router.post("/sync/requests", status_code=202)
@@ -169,6 +232,7 @@ def sync_requests(payload: RequestSyncPayload) -> dict:
     if key not in _mem_projects:
         raise HTTPException(status_code=404, detail="Project not found")
     ensure_project_scope_allows_writes(None, payload.project_id)
+    _memory_merge_request_items(key, payload.requests)
     logutil.emit(
         "sync_requests",
         project_id=key,
@@ -227,7 +291,17 @@ def generate_hypotheses(payload: HypothesisGenerationRequest) -> HypothesisGener
     ensure_project_scope_allows_writes(None, payload.project_id)
     for _ in range(count):
         hid = str(uuid4())
-        _mem_hypotheses[hid] = {"id": hid, "project_id": key, "status": "queued"}
+        now = datetime.now(UTC)
+        _mem_hypotheses[hid] = {
+            "id": hid,
+            "project_id": key,
+            "title": "Hypothesis generation requested",
+            "bug_class": "pending",
+            "status": "queued",
+            "priority_score": 0.5,
+            "confidence_score": 0.5,
+            "created_at": now,
+        }
         hypothesis_ids.append(hid)
     logutil.emit(
         "hypotheses_generate",

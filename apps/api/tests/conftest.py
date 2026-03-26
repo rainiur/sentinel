@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 import db
 import persistence
 from authdeps import clear_auth_settings_cache
-from main import _mem_hypotheses, _mem_projects, app
+from main import _mem_endpoints, _mem_hypotheses, _mem_projects, app
 
 
 @pytest.fixture(autouse=True)
@@ -19,6 +19,7 @@ def isolated_memory(monkeypatch: pytest.MonkeyPatch) -> None:
     persistence.clear_memory_stores()
     _mem_projects.clear()
     _mem_hypotheses.clear()
+    _mem_endpoints.clear()
 
 
 @pytest.fixture

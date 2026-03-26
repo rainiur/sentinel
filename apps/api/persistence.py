@@ -6,6 +6,7 @@ import json
 from uuid import UUID, uuid4
 
 from sqlalchemy import Engine, text
+from sqlalchemy.engine import Connection
 
 from schemas import (
     CreateProjectResponse,
@@ -130,6 +131,53 @@ def project_exists(engine: Engine, project_id: UUID) -> bool:
     return fetch_project(engine, project_id) is not None
 
 
+def list_projects(engine: Engine) -> list[dict]:
+    with engine.connect() as conn:
+        rows = (
+            conn.execute(
+                text(
+                    """
+                    SELECT id::text, name, owner_team
+                    FROM projects
+                    ORDER BY created_at DESC
+                    """
+                )
+            )
+            .mappings()
+            .all()
+        )
+    return [dict(r) for r in rows]
+
+
+def list_hypotheses_for_project(engine: Engine, project_id: UUID) -> list[dict]:
+    with engine.connect() as conn:
+        rows = (
+            conn.execute(
+                text(
+                    """
+                    SELECT id::text, title, bug_class, status,
+                           priority_score, confidence_score, created_at
+                    FROM hypotheses
+                    WHERE project_id = :pid
+                    ORDER BY created_at DESC
+                    """
+                ),
+                {"pid": project_id},
+            )
+            .mappings()
+            .all()
+        )
+    out: list[dict] = []
+    for r in rows:
+        d = dict(r)
+        for key in ("priority_score", "confidence_score"):
+            v = d.get(key)
+            if v is not None:
+                d[key] = float(v)
+        out.append(d)
+    return out
+
+
 def fetch_surface(engine: Engine, project_id: UUID) -> dict:
     with engine.connect() as conn:
         ep_rows = (
@@ -182,6 +230,28 @@ def fetch_surface(engine: Engine, project_id: UUID) -> dict:
     }
 
 
+def _upsert_endpoint_from_request(conn: Connection, project_id: UUID, item: RequestItem) -> None:
+    """Merge observed (method, path) into ``endpoints`` for surface API (idempotent)."""
+    raw_path = (item.path or "").strip()
+    route = raw_path if raw_path else "/"
+    method = (item.method or "GET").strip().upper() or "GET"
+    conn.execute(
+        text(
+            """
+            INSERT INTO endpoints (
+                id, project_id, method, route_pattern, content_type, auth_required,
+                first_seen, last_seen, source_confidence
+            ) VALUES (
+                :id, :pid, :method, :route, NULL, NULL, NOW(), NOW(), 0.5000
+            )
+            ON CONFLICT (project_id, method, route_pattern)
+            DO UPDATE SET last_seen = NOW()
+            """
+        ),
+        {"id": uuid4(), "pid": project_id, "method": method, "route": route},
+    )
+
+
 def insert_caido_requests(
     engine: Engine,
     project_id: UUID,
@@ -216,6 +286,7 @@ def insert_caido_requests(
                     "resp_headers": json.dumps(item.resp_headers_json or {}),
                 },
             )
+            _upsert_endpoint_from_request(conn, project_id, item)
             n += 1
     return n
 

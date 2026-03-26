@@ -207,8 +207,8 @@ The repo is a **runnable stack** (Docker Compose, Postgres init schema, API with
 - **Security / M1**: **JWT (HS256) + analyst RBAC** on `/api/*`, **audit** middleware (`audit_http`, correlation id), and **scope manifest** checks on mutating routes are implemented; **OIDC/JWKS**, persisted audit store, and **policy engine** are still open.
 - **Data layer**: No Alembic (or equivalent) migrations; schema evolves via `postgres_schema.sql` + manual changes; row-level security and retention jobs not implemented.
 - **Worker**: **Redis BRPOP** on **`sentinel:jobs`**; **`ingest`** / **`embeddings`** stubs; API **`POST /api/jobs`** **LPUSH** producer when **`REDIS_URL`** is set. **Clustering** / **sub-agent** job types and richer pipelines still open.
-- **Caido bridge**: Plugin remains TODO stubs (no signed sync to API).
-- **Frontend**: Beyond home + API health check, no dashboard, projects CRUD UI, or analyst workflows.
+- **Caido bridge**: Repo includes **`pushRequestsToSentinel`** (HTTP to **`/api/sync/requests`**); Caido SDK wiring and signed callbacks remain TODO.
+- **Frontend**: **Projects** list, project **surface** (endpoints after sync), and **hypotheses** queue pages exist; no full dashboard, project CRUD forms, or richer analyst workflows yet.
 - **Object storage**: MinIO wired in compose; API does not yet store evidence bundles in S3-compatible storage.
 - **Hypotheses**: Stub generation and approve only; no reject/cancel, ranking, or RAG-backed proposals.
 - **MCP / sub-agents**: No MCP registry, client, or audited tool-call path in code yet; orchestration remains single-process API/worker without an agent runtime. **Config contract** is **`SENTINEL_MCP_CONFIG`** → JSON with **`mcpServers`** (Cursor-style); see **`config/mcp.example.json`**. Wiring the client and allowlist is still TODO.
