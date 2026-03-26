@@ -142,6 +142,21 @@ class EvidenceCreatedResponse(BaseModel):
     id: str
 
 
+class McpServerEntry(BaseModel):
+    name: str
+    transport: Literal["stdio", "http"]
+
+
+class McpStatusResponse(BaseModel):
+    """Summary of ``SENTINEL_MCP_CONFIG``; no commands, URLs, or secrets."""
+
+    loaded: bool
+    path_configured: bool
+    error: str | None = None
+    server_count: int
+    servers: list[McpServerEntry]
+
+
 class EnqueueJobRequest(BaseModel):
     """Queue a worker job. ``project_id`` is required for ``ingest`` and ``embeddings``."""
 

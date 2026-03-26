@@ -35,6 +35,20 @@ paths:
         - bearerAuth: []
       responses:
         '200':
+          description: OK (body includes writes_disabled when maintenance kill-switch is set)
+        '401':
+          description: Missing or invalid bearer token when auth is required
+        '403':
+          description: Insufficient role
+  /api/mcp/servers:
+    get:
+      summary: MCP config summary (server names and transport class only; no secrets)
+      description: |
+        Reads ``SENTINEL_MCP_CONFIG`` JSON (Cursor-style ``mcpServers``). Does not return commands, URLs, headers, or env.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
           description: OK
         '401':
           description: Missing or invalid bearer token when auth is required

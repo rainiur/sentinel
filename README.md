@@ -1,6 +1,6 @@
 # Sentinel for Caido - Build Package
 
-**Last updated:** 2026-03-26 (evidence bundle register/list API + UI; compose security notes)
+**Last updated:** 2026-03-26 (dashboard, MCP config summary API, optional API write kill-switch)
 
 This package is a starter blueprint and implementation scaffold for a **human-governed, scope-bound web security testing assistant** centered on **Caido**, with a planned **sub-agent** layer that can invoke **allowlisted MCP tools** for testing and evidence workflows under policy and audit (see **`PLAN.md`**).
 
@@ -89,7 +89,9 @@ Defaults avoid binding **5432**, **6379**, **8080**, **3000**, **9000**, and **9
 
 The web image uses the production `runner` stage (`next build` + standalone server). The browser client’s API base URL defaults to `http://localhost:<SENTINEL_API_PORT>`. Set **`SENTINEL_BROWSER_API_URL`** in `infra/docker/.env` if you use another host or scheme.
 
-**Web UI (minimal slice):** **`/`** health probe; **`/projects`** (create form + list); project detail (**surface** after request sync); **`/projects/{id}/hypotheses`** (generate, approve, reject); **`/projects/{id}/findings`**; **`/projects/{id}/evidence`** (register **metadata** after uploading to S3/MinIO — see **`S3_*`** env in `apps/api/.env.example`). Surface **groups** paths that differ only by **query string**.
+**Web UI (minimal slice):** **`/`** health probe; **`/dashboard`** (health, API version, **`writes_disabled`** flag, project count, MCP server names from **`GET /api/mcp/servers`**); **`/projects`** (create form + list); project detail (**surface** after request sync); **`/projects/{id}/hypotheses`** (generate, approve, reject); **`/projects/{id}/findings`**; **`/projects/{id}/evidence`**. Surface **groups** paths that differ only by **query string**.
+
+**Operations:** Set **`SENTINEL_API_WRITES_DISABLED=true`** on the API to return **503** for **POST/PUT/PATCH/DELETE** under **`/api/*`** (reads unchanged). Wired through **`infra/docker/.env`** → Compose.
 
 ### Postgres: existing Compose volumes
 

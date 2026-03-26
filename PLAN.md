@@ -211,7 +211,7 @@ The repo is a **runnable stack** (Docker Compose, Postgres init schema, API with
 - **Frontend**: **Projects** list, project **surface** (endpoints after sync), and **hypotheses** queue pages exist; no full dashboard, project CRUD forms, or richer analyst workflows yet.
 - **Object storage**: MinIO wired in compose; API can **register** **`evidence_bundles`** metadata (**`storage_key`**) after upload; no presigned upload or server-side PUT in API yet.
 - **Hypotheses**: Stub generation; **approve** and **reject** (queued-only); no ranking or RAG-backed proposals yet.
-- **MCP / sub-agents**: No MCP registry, client, or audited tool-call path in code yet; orchestration remains single-process API/worker without an agent runtime. **Config contract** is **`SENTINEL_MCP_CONFIG`** → JSON with **`mcpServers`** (Cursor-style); see **`config/mcp.example.json`**. Wiring the client and allowlist is still TODO.
+- **MCP / sub-agents**: **`GET /api/mcp/servers`** summarizes **`SENTINEL_MCP_CONFIG`** (names + transport class only). No MCP registry, client, or audited tool-call path yet; orchestration remains single-process API/worker without an agent runtime. **Config contract** is **`SENTINEL_MCP_CONFIG`** → JSON with **`mcpServers`** (Cursor-style); see **`config/mcp.example.json`**. Wiring the client and allowlist is still TODO.
 - **Engineering**: Prometheus/runbooks and optional Python lockfile strategy still open; **OpenAPI↔route parity** covered by API pytest (`test_openapi_contract.py`). CI, `.gitignore`, EditorConfig, and pre-commit are in place.
 - **Docs / process**: `docs/threat_model.md` vs org-standard `THREATMODEL.md` naming still to align; `TASKS.md` may need owner/priority/dates when formal tracking starts.
 

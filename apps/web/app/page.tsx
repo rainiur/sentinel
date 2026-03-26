@@ -23,6 +23,9 @@ export default async function Page() {
           API health: <strong>{health}</strong>
         </li>
         <li>
+          <Link href="/dashboard">Dashboard</Link> — health, version, project count, MCP summary
+        </li>
+        <li>
           <Link href="/projects">Projects</Link> — list, surface (endpoints after sync), and hypotheses queue
         </li>
         <li>Still to build: Evidence, Learning, Research, Policies</li>

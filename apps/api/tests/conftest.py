@@ -14,6 +14,8 @@ def isolated_memory(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("DATABASE_URL", raising=False)
     monkeypatch.delenv("SENTINEL_REQUIRE_AUTH", raising=False)
     monkeypatch.delenv("SENTINEL_JWT_SECRET", raising=False)
+    monkeypatch.delenv("SENTINEL_API_WRITES_DISABLED", raising=False)
+    monkeypatch.delenv("SENTINEL_MCP_CONFIG", raising=False)
     db.get_engine.cache_clear()
     clear_auth_settings_cache()
     persistence.clear_memory_stores()

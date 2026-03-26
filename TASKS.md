@@ -1,6 +1,6 @@
 # TASKS.md - Implementation Backlog
 
-Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`** → *Implementation status and remaining gaps*. Last doc sync: **2026-03-26** (evidence register/list API + UI; README compose security; DB indexes).
+Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`** → *Implementation status and remaining gaps*. Last doc sync: **2026-03-26** (MCP config summary API, write kill-switch, dashboard).
 
 ## 0. Project setup
 - [x] Create monorepo structure (multi-app layout: `apps/*`, `infra/docker`, `integrations/`, `schemas/`, `docs/`) — Completed: 2026-03-26
@@ -98,10 +98,10 @@ Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`*
 - [ ] Add decision engine for action gating
 - [ ] Add rate limit enforcement
 - [ ] Add restricted family policies
-- [ ] Add emergency kill switch
+- [x] Emergency **read-only API** via **`SENTINEL_API_WRITES_DISABLED`** (blocks POST/PUT/PATCH/DELETE on **`/api/*`**) — Completed: 2026-03-26
 
 ## 10. Frontend
-- [ ] Add dashboard page
+- [x] **Dashboard** (`/dashboard`) — health, version, project count, MCP summary — Completed: 2026-03-26
 - [x] **Projects** list (`/projects`) with **create form**, **project detail** (surface + links), **hypotheses**, **findings**, **evidence** (`/projects/{id}/evidence`) — Completed: 2026-03-26
 - [ ] Add surface inventory page (filters, export)
 - [ ] Rich hypotheses queue (detail drawer, reject)
@@ -132,7 +132,8 @@ Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`*
 ## 13. MCP and sub-agent orchestration
 - [x] Document MCP via Cursor-style `mcpServers` JSON (`SENTINEL_MCP_CONFIG`, `config/mcp.example.json`; no single lab host) — Completed: 2026-03-26
 - [x] Document 1:1 mapping **each `mcpServers` key → dedicated MCP sub-agent** (domain agents delegate); see `PLAN.md` / `docs/architecture.md` — Completed: 2026-03-26
-- [ ] Document MCP server/tool allowlist model and config surface (per-project vs global; env/vault)
+- [x] **GET /api/mcp/servers** — load **`SENTINEL_MCP_CONFIG`**, return server **names** + **transport** (stdio vs http) only; no secrets — Completed: 2026-03-26
+- [ ] Document MCP server/tool **allowlist** model (per-project vs global; env/vault) beyond config introspection
 - [ ] Design tool risk classes (read / write / destructive) and map to approval + audit requirements
 - [ ] Implement MCP client wrapper: timeouts, retries with backoff, correlation IDs, structured audit events (no secrets in logs)
 - [ ] Validate tool arguments against scope manifest (hosts, paths, methods) before invocation

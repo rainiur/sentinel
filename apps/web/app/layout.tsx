@@ -21,6 +21,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         >
           <Link href="/">Home</Link>
           <span style={{ margin: '0 10px', color: '#ccc' }}>|</span>
+          <Link href="/dashboard">Dashboard</Link>
+          <span style={{ margin: '0 10px', color: '#ccc' }}>|</span>
           <Link href="/projects">Projects</Link>
         </nav>
         {children}

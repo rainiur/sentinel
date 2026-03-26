@@ -12,6 +12,7 @@ from redis.exceptions import RedisError
 import db
 import jobqueue
 import logutil
+import mcpconfig
 import persistence
 from audit_middleware import AuditMiddleware
 from authdeps import require_analyst
@@ -35,12 +36,15 @@ from schemas import (
     HypothesisListItem,
     HypothesisListResponse,
     HypothesisRejectResponse,
+    McpServerEntry,
+    McpStatusResponse,
     ProjectsListResponse,
     RegisterEvidenceRequest,
     RequestItem,
     RequestSyncPayload,
 )
 from scopeguard import ensure_project_scope_allows_writes
+from write_kill_switch import WriteKillSwitchMiddleware, writes_disabled
 
 load_dotenv()
 
@@ -123,6 +127,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 app.add_middleware(AuditMiddleware)
+app.add_middleware(WriteKillSwitchMiddleware)
 
 api_router = APIRouter(prefix="/api", dependencies=[Depends(require_analyst)])
 
@@ -157,8 +162,26 @@ def ready() -> JSONResponse:
 
 
 @api_router.get("/version")
-def api_version() -> dict[str, str]:
-    return {"version": APP_VERSION, "service": "sentinel-api"}
+def api_version() -> dict[str, str | bool]:
+    return {
+        "version": APP_VERSION,
+        "service": "sentinel-api",
+        "writes_disabled": writes_disabled(),
+    }
+
+
+@api_router.get("/mcp/servers", response_model=McpStatusResponse)
+def mcp_servers_status() -> McpStatusResponse:
+    """Read-only summary of MCP server names from ``SENTINEL_MCP_CONFIG`` (no secrets)."""
+    raw = mcpconfig.summarize_mcp_servers()
+    servers = [McpServerEntry(**s) for s in raw["servers"]]
+    return McpStatusResponse(
+        loaded=raw["loaded"],
+        path_configured=raw["path_configured"],
+        error=raw["error"],
+        server_count=raw["server_count"],
+        servers=servers,
+    )
 
 
 @api_router.post("/projects", response_model=CreateProjectResponse, status_code=201)
