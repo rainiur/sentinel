@@ -26,9 +26,10 @@ export default async function Page() {
           <Link href="/dashboard">Dashboard</Link> — health, version, project count, MCP summary
         </li>
         <li>
-          <Link href="/projects">Projects</Link> — list, surface (endpoints after sync), and hypotheses queue
+          <Link href="/projects">Projects</Link> — list, surface inventory (filters/export), hypotheses, findings,
+          evidence
         </li>
-        <li>Still to build: Evidence, Learning, Research, Policies</li>
+        <li>Still to build: Learning, Research, Policies (richer analyst UX)</li>
       </ul>
     </main>
   );

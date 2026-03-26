@@ -1,6 +1,6 @@
 # TASKS.md - Implementation Backlog
 
-Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`** → *Implementation status and remaining gaps*. Last doc sync: **2026-03-26** (evidence presigned PUT URLs + web upload; S3 env documented).
+Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`** → *Implementation status and remaining gaps*. Last doc sync: **2026-03-26** (surface inventory UI: `/projects/{id}/surface`, filters, export).
 
 ## 0. Project setup
 - [x] Create monorepo structure (multi-app layout: `apps/*`, `infra/docker`, `integrations/`, `schemas/`, `docs/`) — Completed: 2026-03-26
@@ -60,7 +60,7 @@ Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`*
 - [ ] Extract route patterns, parameters, auth contexts (worker/analytics)
 - [ ] Build endpoint summary documents for retrieval
 - [x] Expose `GET /api/projects/{project_id}/surface` (DB-backed when Postgres configured; empty until endpoints populated) — Completed: 2026-03-26
-- [ ] Surface inventory UI tables
+- [x] Surface inventory UI tables (`/projects/{id}/surface`, filters, CSV/JSON export) — Completed: 2026-03-26
 
 ## 5. Hypothesis engine
 - [ ] Define strict JSON schema for proposals
@@ -104,7 +104,7 @@ Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`*
 ## 10. Frontend
 - [x] **Dashboard** (`/dashboard`) — health, version, project count, MCP summary — Completed: 2026-03-26
 - [x] **Projects** list (`/projects`) with **create form**, **project detail** (surface + links), **hypotheses**, **findings**, **evidence** (`/projects/{id}/evidence`) — Completed: 2026-03-26
-- [ ] Add surface inventory page (filters, export)
+- [x] Add surface inventory page (filters, export) — Completed: 2026-03-26 (see §4 surface UI)
 - [ ] Rich hypotheses queue (detail drawer, reject)
 - [ ] Add evidence and findings page
 - [ ] Add learning metrics page

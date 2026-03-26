@@ -59,32 +59,46 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
         <p style={{ color: '#a30' }}>API issue: {projErr}</p>
       ) : null}
       <p style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+        <Link href={`/projects/${id}/surface`}>Surface inventory →</Link>
         <Link href={`/projects/${id}/hypotheses`}>Hypotheses queue →</Link>
         <Link href={`/projects/${id}/findings`}>Findings →</Link>
         <Link href={`/projects/${id}/evidence`}>Evidence →</Link>
       </p>
-      <h2 style={{ marginTop: 28, fontSize: '1.1rem' }}>Surface (endpoints)</h2>
+      <h2 style={{ marginTop: 28, fontSize: '1.1rem' }}>Surface preview</h2>
       {!surface || surface.endpoints.length === 0 ? (
         <p style={{ color: '#666' }}>
           No endpoints yet. Sync traffic via <code>POST /api/sync/requests</code> or the Caido bridge.
         </p>
       ) : (
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
-          <thead>
-            <tr style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>
-              <th style={{ padding: 8 }}>Method</th>
-              <th style={{ padding: 8 }}>Path</th>
-            </tr>
-          </thead>
-          <tbody>
-            {surface.endpoints.map((e) => (
-              <tr key={e.id} style={{ borderBottom: '1px solid #eee' }}>
-                <td style={{ padding: 8, fontFamily: 'monospace' }}>{e.method}</td>
-                <td style={{ padding: 8, fontFamily: 'monospace' }}>{e.route_pattern}</td>
+        <>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+            <thead>
+              <tr style={{ textAlign: 'left', borderBottom: '1px solid #ccc' }}>
+                <th style={{ padding: 8 }}>Method</th>
+                <th style={{ padding: 8 }}>Path</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {surface.endpoints.slice(0, 8).map((e) => (
+                <tr key={e.id} style={{ borderBottom: '1px solid #eee' }}>
+                  <td style={{ padding: 8, fontFamily: 'monospace' }}>{e.method}</td>
+                  <td style={{ padding: 8, fontFamily: 'monospace' }}>{e.route_pattern}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {surface.endpoints.length > 8 ? (
+            <p style={{ marginTop: 12 }}>
+              <Link href={`/projects/${id}/surface`}>
+                View all {surface.endpoints.length} endpoints (filters & export) →
+              </Link>
+            </p>
+          ) : (
+            <p style={{ marginTop: 12, fontSize: 14 }}>
+              <Link href={`/projects/${id}/surface`}>Filters &amp; CSV/JSON export →</Link>
+            </p>
+          )}
+        </>
       )}
     </main>
   );
