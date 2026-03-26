@@ -14,6 +14,7 @@ import jobqueue
 import logutil
 import mcpconfig
 import persistence
+import s3_presign
 from audit_middleware import AuditMiddleware
 from authdeps import require_analyst
 from rate_limit_middleware import RateLimitMiddleware, rate_limit_rpm_configured
@@ -25,6 +26,8 @@ from schemas import (
     EvidenceBundleItem,
     EvidenceCreatedResponse,
     EvidenceListResponse,
+    EvidencePresignRequest,
+    EvidencePresignResponse,
     FeedbackCreatedResponse,
     FeedbackRequest,
     FindingListItem,
@@ -330,6 +333,56 @@ def list_project_evidence(project_id: UUID) -> EvidenceListResponse:
     return EvidenceListResponse(
         project_id=key,
         bundles=[EvidenceBundleItem.model_validate(r) for r in rows],
+    )
+
+
+@api_router.post(
+    "/projects/{project_id}/evidence/presign",
+    response_model=EvidencePresignResponse,
+)
+def presign_evidence_upload(
+    project_id: UUID,
+    body: EvidencePresignRequest,
+) -> EvidencePresignResponse:
+    """Return a short-lived PUT URL; key is under ``evidence/{project_id}/`` (server-chosen)."""
+    if not s3_presign.s3_settings_complete():
+        raise HTTPException(
+            status_code=503,
+            detail="S3-compatible storage is not configured for this API instance",
+        )
+    key = str(project_id)
+    engine = db.get_engine()
+    if engine:
+        if not persistence.project_exists(engine, project_id):
+            raise HTTPException(status_code=404, detail="Project not found")
+        ensure_project_scope_allows_writes(engine, project_id)
+    else:
+        if key not in _mem_projects:
+            raise HTTPException(status_code=404, detail="Project not found")
+        ensure_project_scope_allows_writes(None, project_id)
+    try:
+        url, storage_key, exp = s3_presign.presign_put_evidence(
+            project_id,
+            body.filename,
+            body.content_type,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail="Invalid filename") from exc
+    except Exception as exc:  # noqa: BLE001
+        logutil.emit("evidence_presign_failed", level=30, error=type(exc).__name__)
+        raise HTTPException(status_code=500, detail="Failed to create upload URL") from exc
+    ct = (body.content_type or "").strip() or "application/octet-stream"
+    logutil.emit(
+        "evidence_presign_issued",
+        project_id=key,
+        storage_key=storage_key,
+        expires_in=exp,
+    )
+    return EvidencePresignResponse(
+        upload_url=url,
+        storage_key=storage_key,
+        expires_in=exp,
+        content_type=ct,
     )
 
 

@@ -19,6 +19,15 @@ def isolated_memory(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("SENTINEL_MCP_CONFIG", raising=False)
     monkeypatch.delenv("SENTINEL_RATE_LIMIT_RPM", raising=False)
     monkeypatch.delenv("SENTINEL_TRUST_X_FORWARDED_FOR", raising=False)
+    for _s3k in (
+        "S3_ENDPOINT",
+        "S3_BUCKET",
+        "S3_ACCESS_KEY",
+        "S3_SECRET_KEY",
+        "S3_REGION",
+        "S3_PRESIGN_EXPIRES_SECONDS",
+    ):
+        monkeypatch.delenv(_s3k, raising=False)
     rate_limit_middleware.reset_rate_limit_state()
     db.get_engine.cache_clear()
     clear_auth_settings_cache()

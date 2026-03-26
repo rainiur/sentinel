@@ -1,6 +1,6 @@
 # Sentinel for Caido - Build Package
 
-**Last updated:** 2026-03-26 (Compose MCP mount, optional /api rate limit, dashboard)
+**Last updated:** 2026-03-26 (evidence presigned PUT URLs, web upload flow)
 
 This package is a starter blueprint and implementation scaffold for a **human-governed, scope-bound web security testing assistant** centered on **Caido**, with a planned **sub-agent** layer that can invoke **allowlisted MCP tools** for testing and evidence workflows under policy and audit (see **`PLAN.md`**).
 
@@ -89,7 +89,9 @@ Defaults avoid binding **5432**, **6379**, **8080**, **3000**, **9000**, and **9
 
 The web image uses the production `runner` stage (`next build` + standalone server). The browser client’s API base URL defaults to `http://localhost:<SENTINEL_API_PORT>`. Set **`SENTINEL_BROWSER_API_URL`** in `infra/docker/.env` if you use another host or scheme.
 
-**Web UI (minimal slice):** **`/`** health probe; **`/dashboard`** (health, API version, **`writes_disabled`** flag, project count, MCP server names from **`GET /api/mcp/servers`**); **`/projects`** (create form + list); project detail (**surface** after request sync); **`/projects/{id}/hypotheses`** (generate, approve, reject); **`/projects/{id}/findings`**; **`/projects/{id}/evidence`**. Surface **groups** paths that differ only by **query string**.
+**Web UI (minimal slice):** **`/`** health probe; **`/dashboard`** (health, API version, **`writes_disabled`** flag, project count, MCP server names from **`GET /api/mcp/servers`**); **`/projects`** (create form + list); project detail (**surface** after request sync); **`/projects/{id}/hypotheses`** (generate, approve, reject); **`/projects/{id}/findings`**; **`/projects/{id}/evidence`** (presigned **PUT** upload + metadata register, or manual **storage key**). Surface **groups** paths that differ only by **query string**.
+
+**Evidence uploads:** With **`S3_*`** set on the API (Compose includes MinIO defaults), **`POST /api/projects/{id}/evidence/presign`** returns a short-lived **PUT** URL and a server-chosen **`storage_key`** under **`evidence/{project_id}/…`**. After **PUT**, call **`POST /api/projects/{id}/evidence`** with that key. Optional **`S3_PRESIGN_EXPIRES_SECONDS`** (default **900**, max **604800**). Create the **`S3_BUCKET`** bucket in MinIO if it does not exist. **Browser uploads** from the web UI send **PUT** to MinIO/S3 directly; allow your web origin in the bucket **CORS** policy (e.g. `http://localhost:30700` with **PUT**, **`expose-headers`**, and the **`Content-Type`** you sign).
 
 **Operations:** Set **`SENTINEL_API_WRITES_DISABLED=true`** on the API to return **503** for **POST/PUT/PATCH/DELETE** under **`/api/*`** (reads unchanged). Set **`SENTINEL_RATE_LIMIT_RPM`** for a per-IP rolling-window cap on **`/api/*`** only (**429** + **`Retry-After`**). Compose mounts **`config/mcp.example.json`** into the API and worker as **`/etc/sentinel/mcp.json`** by default; override **`SENTINEL_MCP_HOST_FILE`** in **`infra/docker/.env`** for your own file.
 

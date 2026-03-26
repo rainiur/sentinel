@@ -142,6 +142,21 @@ class EvidenceCreatedResponse(BaseModel):
     id: str
 
 
+class EvidencePresignRequest(BaseModel):
+    """Ask for a time-limited PUT URL; object key is server-chosen under evidence/{project_id}/."""
+
+    filename: str = Field(..., min_length=1, max_length=255)
+    content_type: str | None = Field(None, max_length=128)
+
+
+class EvidencePresignResponse(BaseModel):
+    upload_url: str
+    storage_key: str
+    expires_in: int = Field(..., ge=60)
+    http_method: Literal["PUT"] = "PUT"
+    content_type: str
+
+
 class McpServerEntry(BaseModel):
     name: str
     transport: Literal["stdio", "http"]

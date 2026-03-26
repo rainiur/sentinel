@@ -1,6 +1,6 @@
 # TASKS.md - Implementation Backlog
 
-Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`** → *Implementation status and remaining gaps*. Last doc sync: **2026-03-26** (Compose MCP mount, optional /api rate limit, dashboard version fields).
+Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`** → *Implementation status and remaining gaps*. Last doc sync: **2026-03-26** (evidence presigned PUT URLs + web upload; S3 env documented).
 
 ## 0. Project setup
 - [x] Create monorepo structure (multi-app layout: `apps/*`, `infra/docker`, `integrations/`, `schemas/`, `docs/`) — Completed: 2026-03-26
@@ -72,7 +72,8 @@ Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`*
 
 ## 6. Evidence pipeline
 - [x] Register **evidence bundle** metadata (**`POST /api/projects/{id}/evidence`**, **`GET .../evidence`**) after objects exist in S3-compatible storage; web register form — Completed: 2026-03-26
-- [ ] Server-side upload / presigned URLs; store request/response bodies in object storage
+- [x] Presigned **PUT** URLs for evidence (`POST /api/projects/{id}/evidence/presign`; boto3; web **Upload & register**) — Completed: 2026-03-26
+- [ ] Server-side streaming upload / store request/response bodies in object storage (beyond presigned client PUT)
 - [ ] Add dedupe / clustering job
 - [ ] Build evidence timeline view
 - [ ] Add finding draft generation
