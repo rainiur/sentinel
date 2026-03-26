@@ -1,6 +1,6 @@
 # Sentinel for Caido - Build Package
 
-**Last updated:** 2026-03-26 (vertical slice: sync → surface endpoints, web projects/hypotheses, bridge HTTP client)
+**Last updated:** 2026-03-26 (vertical slice + web create-project form; bridge request + findings HTTP clients)
 
 This package is a starter blueprint and implementation scaffold for a **human-governed, scope-bound web security testing assistant** centered on **Caido**, with a planned **sub-agent** layer that can invoke **allowlisted MCP tools** for testing and evidence workflows under policy and audit (see **`PLAN.md`**).
 
@@ -87,7 +87,7 @@ Defaults avoid binding **5432**, **6379**, **8080**, **3000**, **9000**, and **9
 
 The web image uses the production `runner` stage (`next build` + standalone server). The browser client’s API base URL defaults to `http://localhost:<SENTINEL_API_PORT>`. Set **`SENTINEL_BROWSER_API_URL`** in `infra/docker/.env` if you use another host or scheme.
 
-**Web UI (minimal slice):** **`/`** health probe; **`/projects`** lists projects; project detail shows **surface** endpoints after **`POST /api/sync/requests`** (or Caido **`pushRequestsToSentinel`**); **`/projects/{id}/hypotheses`** lists stub hypotheses, generate, and approve.
+**Web UI (minimal slice):** **`/`** health probe; **`/projects`** lists projects and includes a **create project** form; project detail shows **surface** endpoints after **`POST /api/sync/requests`** (or Caido **`pushRequestsToSentinel`**); **`/projects/{id}/hypotheses`** lists stub hypotheses, generate, and approve. Bridge also exposes **`pushFindingsToSentinel`** for **`POST /api/sync/findings`**.
 
 ### Postgres: existing Compose volumes
 

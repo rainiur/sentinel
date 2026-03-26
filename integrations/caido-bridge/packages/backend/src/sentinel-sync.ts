@@ -1,9 +1,9 @@
 /**
  * HTTP client for Sentinel API sync endpoints (no Caido SDK dependency).
- * Map Caido traffic to {@link SentinelRequest}, then call {@link pushRequestsToSentinel}.
+ * Map Caido traffic to {@link SentinelRequest} / {@link SentinelFinding}.
  */
 
-import type { SentinelRequest } from '../../shared/src/types';
+import type { SentinelFinding, SentinelRequest } from '../../shared/src/types';
 
 export type SentinelBridgeConfig = {
   /** e.g. http://localhost:30880 (Compose default API port) */
@@ -48,6 +48,42 @@ export async function pushRequestsToSentinel(
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`Sentinel sync failed: ${res.status} ${text}`);
+  }
+  return (await res.json()) as { accepted: boolean; received: number };
+}
+
+function findingToApiItem(f: SentinelFinding) {
+  const bugClass =
+    f.title && f.bugClass ? `${f.bugClass}: ${f.title}` : f.bugClass || f.title || 'unspecified';
+  return {
+    source: f.source ?? 'caido',
+    bug_class: bugClass,
+    severity: f.severity,
+    confidence: f.confidence,
+  };
+}
+
+export async function pushFindingsToSentinel(
+  cfg: SentinelBridgeConfig,
+  findings: SentinelFinding[],
+): Promise<{ accepted: boolean; received: number }> {
+  const base = normalizeBase(cfg.apiBaseUrl);
+  const body = {
+    project_id: cfg.projectId,
+    findings: findings.map(findingToApiItem),
+  };
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (cfg.bearerToken) {
+    headers.Authorization = `Bearer ${cfg.bearerToken}`;
+  }
+  const res = await fetch(`${base}/api/sync/findings`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Sentinel findings sync failed: ${res.status} ${text}`);
   }
   return (await res.json()) as { accepted: boolean; received: number };
 }

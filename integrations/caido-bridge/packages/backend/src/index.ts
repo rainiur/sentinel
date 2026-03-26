@@ -1,7 +1,11 @@
 // TODO: Replace with actual Caido backend SDK imports.
 // This file is a scaffold for bridge logic between Caido and Sentinel API.
 
-export { pushRequestsToSentinel, type SentinelBridgeConfig } from './sentinel-sync';
+export {
+  pushFindingsToSentinel,
+  pushRequestsToSentinel,
+  type SentinelBridgeConfig,
+} from './sentinel-sync';
 
 export async function registerSentinelBackend(): Promise<void> {
   console.log('Sentinel backend plugin scaffold loaded');

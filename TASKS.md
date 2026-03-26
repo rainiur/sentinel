@@ -49,7 +49,7 @@ Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`*
 - [ ] Wire Caido SDK: export selected requests → **`pushRequestsToSentinel`**
 - [ ] Add frontend panel for project binding
 - [ ] Implement normalized request export
-- [ ] Implement findings export
+- [x] HTTP **`pushFindingsToSentinel`** → **`POST /api/sync/findings`** (bridge; Caido SDK wiring still open) — Completed: 2026-03-26
 - [ ] Implement workflow trigger scaffolding
 - [ ] Add signed callback verification between Caido and API
 
@@ -100,7 +100,7 @@ Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`*
 
 ## 10. Frontend
 - [ ] Add dashboard page
-- [x] **Projects** list (`/projects`), **project detail** with surface table, **hypotheses** queue (`/projects/{id}/hypotheses` with generate + approve) — Completed: 2026-03-26
+- [x] **Projects** list (`/projects`) with **create form**, **project detail** with surface table, **hypotheses** queue (`/projects/{id}/hypotheses` with generate + approve) — Completed: 2026-03-26
 - [ ] Add surface inventory page (filters, export)
 - [ ] Rich hypotheses queue (detail drawer, reject)
 - [ ] Add evidence and findings page

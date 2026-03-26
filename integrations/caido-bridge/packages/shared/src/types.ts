@@ -12,8 +12,11 @@ export type SentinelRequest = {
 };
 
 export type SentinelFinding = {
+  /** Human-readable line; folded into API ``bug_class`` with ``bugClass`` when both set */
   title: string;
   bugClass: string;
+  /** Defaults to ``caido`` on the API */
+  source?: string;
   severity?: string;
   confidence?: number;
   evidenceRefs?: string[];

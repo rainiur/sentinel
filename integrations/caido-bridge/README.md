@@ -18,7 +18,12 @@ Implementation backlog for the bridge lives in the repo root **`TASKS.md`** (sec
 
 ## Sentinel HTTP sync (no Caido SDK required for this piece)
 
-`packages/backend/src/sentinel-sync.ts` exports **`pushRequestsToSentinel(cfg, requests)`**, which `POST`s to **`/api/sync/requests`** with the same JSON shape as the OpenAPI **`RequestSyncPayload`**. Configure:
+`packages/backend/src/sentinel-sync.ts` exports:
+
+- **`pushRequestsToSentinel(cfg, requests)`** → **`POST /api/sync/requests`** (**`RequestSyncPayload`**)
+- **`pushFindingsToSentinel(cfg, findings)`** → **`POST /api/sync/findings`** (**`FindingSyncPayload`**; maps **`SentinelFinding.title`** + **`bugClass`** into API **`bug_class`**)
+
+Configure:
 
 - **`apiBaseUrl`** — e.g. `http://localhost:30880` when using default Compose API port
 - **`projectId`** — Sentinel project UUID (create via `POST /api/projects` or after listing projects in the web UI)

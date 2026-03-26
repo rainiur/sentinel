@@ -2,6 +2,8 @@ import Link from 'next/link';
 
 import { getApiBaseUrl } from '../../lib/api-base';
 
+import { CreateProjectForm } from './CreateProjectForm';
+
 type ProjectRow = { id: string; name: string; owner_team: string | null };
 
 export default async function ProjectsPage() {
@@ -23,12 +25,13 @@ export default async function ProjectsPage() {
   return (
     <main style={{ fontFamily: 'system-ui, sans-serif', padding: 32, maxWidth: 720 }}>
       <h1>Projects</h1>
+      <CreateProjectForm />
       {error ? (
         <p style={{ color: '#a30' }}>
           Could not load projects ({error}). Is the API running at <code>{base}</code>?
         </p>
       ) : projects.length === 0 ? (
-        <p>No projects yet. Create one via the API (<code>POST /api/projects</code>) or add a form here next.</p>
+        <p style={{ color: '#666' }}>No projects yet. Use the form above.</p>
       ) : (
         <ul style={{ listStyle: 'none', padding: 0 }}>
           {projects.map((p) => (
