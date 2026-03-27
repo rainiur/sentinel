@@ -187,6 +187,10 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FindingsListResponse'
         '404':
           description: Project not found
   /api/projects/{project_id}/evidence:
@@ -204,6 +208,10 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvidenceListResponse'
         '404':
           description: Project not found
     post:
@@ -476,6 +484,40 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/HypothesisListItem'
+    FindingListItem:
+      type: object
+      required: [id, source, bug_class, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        source:
+          type: string
+        bug_class:
+          type: string
+        severity:
+          type: string
+          nullable: true
+        confidence:
+          type: number
+          nullable: true
+        status:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          nullable: true
+    FindingsListResponse:
+      type: object
+      required: [project_id, findings]
+      properties:
+        project_id:
+          type: string
+          format: uuid
+        findings:
+          type: array
+          items:
+            $ref: '#/components/schemas/FindingListItem'
     FeedbackRequest:
       type: object
       required: [object_type, object_id, feedback_type, user_id]

@@ -1,6 +1,6 @@
 # Sentinel for Caido - Build Package
 
-**Last updated:** 2026-03-26 (hypotheses queue: detail drawer, expanded list fields)
+**Last updated:** 2026-03-26 (findings & evidence: filters, export, finding drawer)
 
 This package is a starter blueprint and implementation scaffold for a **human-governed, scope-bound web security testing assistant** centered on **Caido**, with a planned **sub-agent** layer that can invoke **allowlisted MCP tools** for testing and evidence workflows under policy and audit (see **`PLAN.md`**).
 
@@ -89,7 +89,7 @@ Defaults avoid binding **5432**, **6379**, **8080**, **3000**, **9000**, and **9
 
 The web image uses the production `runner` stage (`next build` + standalone server). The browser client’s API base URL defaults to `http://localhost:<SENTINEL_API_PORT>`. Set **`SENTINEL_BROWSER_API_URL`** in `infra/docker/.env` if you use another host or scheme.
 
-**Web UI (minimal slice):** **`/`** health probe; **`/dashboard`**; **`/projects`** (create + list); project detail with **surface preview**; **`/projects/{id}/surface`** (filters, **CSV** / **JSON** export); **`/projects/{id}/hypotheses`** (**detail drawer**, rationale / evidence JSON, approve/reject); **`/projects/{id}/findings`**; **`/projects/{id}/evidence`**. Surface **groups** paths that differ only by **query string**.
+**Web UI (minimal slice):** **`/`** health probe; **`/dashboard`**; **`/projects`** (create + list); project detail with **surface preview**; **`/projects/{id}/surface`** (filters, export); **`/projects/{id}/hypotheses`** (drawer, approve/reject); **`/projects/{id}/findings`** (filters, sort, export, **detail drawer**); **`/projects/{id}/evidence`** (presign upload + bundle filters / export). Surface **groups** paths that differ only by **query string**.
 
 **Evidence uploads:** With **`S3_*`** set on the API (Compose includes MinIO defaults), **`POST /api/projects/{id}/evidence/presign`** returns a short-lived **PUT** URL and a server-chosen **`storage_key`** under **`evidence/{project_id}/…`**. After **PUT**, call **`POST /api/projects/{id}/evidence`** with that key. Optional **`S3_PRESIGN_EXPIRES_SECONDS`** (default **900**, max **604800**). Create the **`S3_BUCKET`** bucket in MinIO if it does not exist. **Browser uploads** from the web UI send **PUT** to MinIO/S3 directly; allow your web origin in the bucket **CORS** policy (e.g. `http://localhost:30700` with **PUT**, **`expose-headers`**, and the **`Content-Type`** you sign).
 
