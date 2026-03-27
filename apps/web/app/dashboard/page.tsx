@@ -14,6 +14,7 @@ type McpPayload = {
   path_configured: boolean;
   error: string | null;
   server_count: number;
+  suppressed_server_count?: number;
   servers: { name: string; transport: string }[];
 };
 
@@ -106,6 +107,13 @@ export default async function DashboardPage() {
             </li>
             <li>
               Servers: <strong>{mcp.server_count}</strong>
+              {(mcp.suppressed_server_count ?? 0) > 0 ? (
+                <span style={{ color: '#666' }}>
+                  {' '}
+                  ({mcp.suppressed_server_count} suppressed via{' '}
+                  <code style={{ fontSize: 12 }}>SENTINEL_MCP_DISABLED_SERVERS</code>)
+                </span>
+              ) : null}
             </li>
           </ul>
         )}

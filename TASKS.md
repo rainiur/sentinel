@@ -1,6 +1,6 @@
 # TASKS.md - Implementation Backlog
 
-Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`** → *Implementation status and remaining gaps*. Last doc sync: **2026-03-26** (findings & evidence inventory: filters, export, finding detail drawer).
+Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`** → *Implementation status and remaining gaps*. Last doc sync: **2026-03-26** (`/admin` policy page, MCP allowlist docs, `SENTINEL_MCP_DISABLED_SERVERS`).
 
 ## 0. Project setup
 - [x] Create monorepo structure (multi-app layout: `apps/*`, `infra/docker`, `integrations/`, `schemas/`, `docs/`) — Completed: 2026-03-26
@@ -110,7 +110,7 @@ Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`*
 - [x] **Findings** & **evidence** inventory UX (filters, sort, CSV/JSON export; findings **detail drawer**) — Completed: 2026-03-26
 - [ ] Add learning metrics page
 - [ ] Add research curator page
-- [ ] Add policy/admin page
+- [x] Add policy/admin page (`/admin`: version flags, MCP summary, pointers to architecture) — Completed: 2026-03-26
 - [x] Home page + API health probe — Completed: 2026-03-26
 
 ## 11. Operations
@@ -136,11 +136,11 @@ Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`*
 - [x] Document MCP via Cursor-style `mcpServers` JSON (`SENTINEL_MCP_CONFIG`, `config/mcp.example.json`; no single lab host) — Completed: 2026-03-26
 - [x] Document 1:1 mapping **each `mcpServers` key → dedicated MCP sub-agent** (domain agents delegate); see `PLAN.md` / `docs/architecture.md` — Completed: 2026-03-26
 - [x] **GET /api/mcp/servers** — load **`SENTINEL_MCP_CONFIG`**, return server **names** + **transport** (stdio vs http) only; no secrets — Completed: 2026-03-26
-- [ ] Document MCP server/tool **allowlist** model (per-project vs global; env/vault) beyond config introspection
-- [ ] Design tool risk classes (read / write / destructive) and map to approval + audit requirements
+- [x] Document MCP server/tool **allowlist** model (per-project vs global; vault; tool deny-by-default) in **`docs/architecture.md`** — Completed: 2026-03-26
+- [x] Design tool risk classes (read / write / destructive) + approval/audit mapping (documented; enforcement with MCP client) — Completed: 2026-03-26
 - [ ] Implement MCP client wrapper: timeouts, retries with backoff, correlation IDs, structured audit events (no secrets in logs)
 - [ ] Validate tool arguments against scope manifest (hosts, paths, methods) before invocation
-- [ ] Add emergency disable / per-server kill switch in config or API
+- [x] Per-server **visibility** disable: **`SENTINEL_MCP_DISABLED_SERVERS`** + **`suppressed_server_count`** on **`GET /api/mcp/servers`** (tool-call block when MCP client ships) — Completed: 2026-03-26
 - [ ] Integrate first pilot: read-only MCP tools from worker or API path behind feature flag
 - [ ] Add sub-agent orchestration boundary (queue job type or dedicated service) separate from interactive API latency
 - [ ] Extend OpenAPI / internal contracts for “tool run” or “agent step” results where needed for UI replay

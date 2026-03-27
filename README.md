@@ -1,6 +1,6 @@
 # Sentinel for Caido - Build Package
 
-**Last updated:** 2026-03-26 (findings & evidence: filters, export, finding drawer)
+**Last updated:** 2026-03-26 (`/admin` policy page, MCP allowlist + disabled-servers env)
 
 This package is a starter blueprint and implementation scaffold for a **human-governed, scope-bound web security testing assistant** centered on **Caido**, with a planned **sub-agent** layer that can invoke **allowlisted MCP tools** for testing and evidence workflows under policy and audit (see **`PLAN.md`**).
 
@@ -25,7 +25,7 @@ It includes:
 | `README.md` | How to run the stack, ports, optional host dev |
 | `PLAN.md` | Goals, milestones, Caido + **MCP/sub-agent** plan, **implementation status and remaining gaps** |
 | `TASKS.md` | Checklist backlog (kept in sync with the repo; last sync date in file header) |
-| `docs/architecture.md` | Service boundaries and trust boundaries |
+| `docs/architecture.md` | Service boundaries, trust boundaries, **MCP allowlist / risk model** |
 | `docs/threat_model.md` | Threat summary (expand as the system grows) |
 | `schemas/openapi.yaml` | HTTP API contract (servers include Docker and local defaults) |
 | `schemas/postgres_schema.sql` | Relational schema applied on first Postgres init in Compose |
@@ -89,7 +89,9 @@ Defaults avoid binding **5432**, **6379**, **8080**, **3000**, **9000**, and **9
 
 The web image uses the production `runner` stage (`next build` + standalone server). The browser client’s API base URL defaults to `http://localhost:<SENTINEL_API_PORT>`. Set **`SENTINEL_BROWSER_API_URL`** in `infra/docker/.env` if you use another host or scheme.
 
-**Web UI (minimal slice):** **`/`** health probe; **`/dashboard`**; **`/projects`** (create + list); project detail with **surface preview**; **`/projects/{id}/surface`** (filters, export); **`/projects/{id}/hypotheses`** (drawer, approve/reject); **`/projects/{id}/findings`** (filters, sort, export, **detail drawer**); **`/projects/{id}/evidence`** (presign upload + bundle filters / export). Surface **groups** paths that differ only by **query string**.
+**Web UI (minimal slice):** **`/`** health probe; **`/dashboard`**; **`/admin`** (policy / ops flags, MCP summary); **`/projects`** (create + list); project detail with **surface preview**; **`/projects/{id}/surface`** (filters, export); **`/projects/{id}/hypotheses`** (drawer, approve/reject); **`/projects/{id}/findings`** (filters, sort, export, **detail drawer**); **`/projects/{id}/evidence`** (presign upload + bundle filters / export). Surface **groups** paths that differ only by **query string**.
+
+**MCP operations:** Optional **`SENTINEL_MCP_DISABLED_SERVERS`** (comma-separated **`mcpServers`** keys) removes those servers from **`GET /api/mcp/servers`** and sets **`suppressed_server_count`**. This is **introspection/UI** until an MCP client enforces the same list on tool calls. Allowlist model: **`docs/architecture.md`** (Orchestration / MCP plane).
 
 **Evidence uploads:** With **`S3_*`** set on the API (Compose includes MinIO defaults), **`POST /api/projects/{id}/evidence/presign`** returns a short-lived **PUT** URL and a server-chosen **`storage_key`** under **`evidence/{project_id}/…`**. After **PUT**, call **`POST /api/projects/{id}/evidence`** with that key. Optional **`S3_PRESIGN_EXPIRES_SECONDS`** (default **900**, max **604800**). Create the **`S3_BUCKET`** bucket in MinIO if it does not exist. **Browser uploads** from the web UI send **PUT** to MinIO/S3 directly; allow your web origin in the bucket **CORS** policy (e.g. `http://localhost:30700` with **PUT**, **`expose-headers`**, and the **`Content-Type`** you sign).
 

@@ -174,6 +174,7 @@ class McpStatusResponse(BaseModel):
     error: str | None = None
     server_count: int
     servers: list[McpServerEntry]
+    suppressed_server_count: int = 0
 
 
 class EnqueueJobRequest(BaseModel):

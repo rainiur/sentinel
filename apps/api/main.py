@@ -180,6 +180,9 @@ def api_version() -> dict[str, str | bool | int]:
 def mcp_servers_status() -> McpStatusResponse:
     """Read-only summary of MCP server names from ``SENTINEL_MCP_CONFIG`` (no secrets)."""
     raw = mcpconfig.summarize_mcp_servers()
+    suppressed = int(raw.get("suppressed_server_count") or 0)
+    if suppressed > 0:
+        logutil.emit("mcp_servers_suppressed_in_summary", suppressed_count=suppressed)
     servers = [McpServerEntry(**s) for s in raw["servers"]]
     return McpStatusResponse(
         loaded=raw["loaded"],
@@ -187,6 +190,7 @@ def mcp_servers_status() -> McpStatusResponse:
         error=raw["error"],
         server_count=raw["server_count"],
         servers=servers,
+        suppressed_server_count=suppressed,
     )
 
 

@@ -26,6 +26,9 @@ export default async function Page() {
           <Link href="/dashboard">Dashboard</Link> — health, version, project count, MCP summary
         </li>
         <li>
+          <Link href="/admin">Admin</Link> — policy / ops flags, MCP summary, doc pointers
+        </li>
+        <li>
           <Link href="/projects">Projects</Link> — list, surface inventory (filters/export), hypotheses, findings,
           evidence
         </li>

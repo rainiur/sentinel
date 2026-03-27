@@ -17,6 +17,7 @@ def test_mcp_servers_unconfigured(client: TestClient) -> None:
     assert body["loaded"] is False
     assert body["path_configured"] is False
     assert body["server_count"] == 0
+    assert body.get("suppressed_server_count", 0) == 0
 
 
 def test_mcp_servers_loads_example_config(
@@ -37,6 +38,24 @@ def test_mcp_servers_loads_example_config(
     assert "pentesting" in names
     for s in body["servers"]:
         assert s["transport"] in ("stdio", "http")
+    assert body.get("suppressed_server_count", 0) == 0
+
+
+def test_mcp_servers_suppressed_by_disabled_env(
+    client: TestClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cfg = _repo_root() / "config" / "mcp.example.json"
+    monkeypatch.setenv("SENTINEL_MCP_CONFIG", str(cfg))
+    monkeypatch.setenv("SENTINEL_MCP_DISABLED_SERVERS", "pentesting, ssh-mcp")
+    r = client.get("/api/mcp/servers")
+    assert r.status_code == 200
+    body = r.json()
+    assert body["suppressed_server_count"] == 2
+    names = {s["name"] for s in body["servers"]}
+    assert "pentesting" not in names
+    assert "ssh-mcp" not in names
+    assert "searxng" in names or "playwright" in names
 
 
 def test_mcp_servers_missing_file(

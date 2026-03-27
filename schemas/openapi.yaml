@@ -51,11 +51,16 @@ paths:
       summary: MCP config summary (server names and transport class only; no secrets)
       description: |
         Reads ``SENTINEL_MCP_CONFIG`` JSON (Cursor-style ``mcpServers``). Does not return commands, URLs, headers, or env.
+        Server keys listed in ``SENTINEL_MCP_DISABLED_SERVERS`` (comma-separated) are omitted from ``servers``; see ``suppressed_server_count`` (summary/UI only until an MCP client enforces the same list).
       security:
         - bearerAuth: []
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/McpStatusResponse'
         '401':
           description: Missing or invalid bearer token when auth is required
         '403':
@@ -484,6 +489,35 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/HypothesisListItem'
+    McpServerEntry:
+      type: object
+      required: [name, transport]
+      properties:
+        name:
+          type: string
+        transport:
+          type: string
+          enum: [stdio, http]
+    McpStatusResponse:
+      type: object
+      required: [loaded, path_configured, server_count, servers, suppressed_server_count]
+      properties:
+        loaded:
+          type: boolean
+        path_configured:
+          type: boolean
+        error:
+          type: string
+          nullable: true
+        server_count:
+          type: integer
+        servers:
+          type: array
+          items:
+            $ref: '#/components/schemas/McpServerEntry'
+        suppressed_server_count:
+          type: integer
+          minimum: 0
     FindingListItem:
       type: object
       required: [id, source, bug_class, status]
