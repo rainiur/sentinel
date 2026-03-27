@@ -32,6 +32,10 @@ class HypothesisListItem(BaseModel):
     priority_score: float | None = None
     confidence_score: float | None = None
     created_at: datetime | None = None
+    rationale: str = ""
+    supporting_evidence: list[Any] = Field(default_factory=list)
+    human_approval_required: bool = True
+    proposed_template_id: str | None = None
 
 
 class HypothesisListResponse(BaseModel):

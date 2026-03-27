@@ -508,6 +508,10 @@ def generate_hypotheses(payload: HypothesisGenerationRequest) -> HypothesisGener
             "priority_score": 0.5,
             "confidence_score": 0.5,
             "created_at": now,
+            "rationale": "Stub row until the worker runs ranked generation.",
+            "supporting_evidence": [],
+            "human_approval_required": True,
+            "proposed_template_id": None,
         }
         hypothesis_ids.append(hid)
     logutil.emit(

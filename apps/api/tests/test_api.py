@@ -90,6 +90,9 @@ def test_list_hypotheses_after_generate(client: TestClient) -> None:
     assert r.json()["project_id"] == pid
     assert len(r.json()["hypotheses"]) == 2
     assert {h["status"] for h in r.json()["hypotheses"]} == {"queued"}
+    h0 = r.json()["hypotheses"][0]
+    assert "rationale" in h0
+    assert h0.get("supporting_evidence") == []
 
 
 def test_sync_requires_project(client: TestClient) -> None:

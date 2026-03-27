@@ -166,6 +166,10 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HypothesisListResponse'
         '404':
           description: Project not found
   /api/projects/{project_id}/findings:
@@ -430,6 +434,48 @@ components:
         max_results:
           type: integer
           default: 10
+    HypothesisListItem:
+      type: object
+      required: [id, title, bug_class, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        bug_class:
+          type: string
+        status:
+          type: string
+        priority_score:
+          type: number
+        confidence_score:
+          type: number
+        created_at:
+          type: string
+          format: date-time
+        rationale:
+          type: string
+        supporting_evidence:
+          type: array
+          items: {}
+        human_approval_required:
+          type: boolean
+        proposed_template_id:
+          type: string
+          format: uuid
+          nullable: true
+    HypothesisListResponse:
+      type: object
+      required: [project_id, hypotheses]
+      properties:
+        project_id:
+          type: string
+          format: uuid
+        hypotheses:
+          type: array
+          items:
+            $ref: '#/components/schemas/HypothesisListItem'
     FeedbackRequest:
       type: object
       required: [object_type, object_id, feedback_type, user_id]

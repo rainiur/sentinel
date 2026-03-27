@@ -1,6 +1,6 @@
 # TASKS.md - Implementation Backlog
 
-Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`** → *Implementation status and remaining gaps*. Last doc sync: **2026-03-26** (surface inventory UI: `/projects/{id}/surface`, filters, export).
+Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`** → *Implementation status and remaining gaps*. Last doc sync: **2026-03-26** (hypotheses detail drawer; list API includes rationale & evidence).
 
 ## 0. Project setup
 - [x] Create monorepo structure (multi-app layout: `apps/*`, `infra/docker`, `integrations/`, `schemas/`, `docs/`) — Completed: 2026-03-26
@@ -68,7 +68,8 @@ Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`*
 - [ ] Add confidence and priority scoring (beyond stub rows)
 - [x] Approve API — Completed: 2026-03-26 (see §1)
 - [x] Reject API + OpenAPI; web **Reject** control on hypotheses — Completed: 2026-03-26
-- [ ] Review queue APIs; hypothesis detail drawer
+- [x] Hypothesis **detail drawer** (web); list payload includes **rationale**, **supporting_evidence**, flags — Completed: 2026-03-26
+- [ ] Review queue APIs (filtering, pagination, server-side)
 
 ## 6. Evidence pipeline
 - [x] Register **evidence bundle** metadata (**`POST /api/projects/{id}/evidence`**, **`GET .../evidence`**) after objects exist in S3-compatible storage; web register form — Completed: 2026-03-26
@@ -105,7 +106,7 @@ Tactical items are tracked below. Narrative status and gap summary: **`PLAN.md`*
 - [x] **Dashboard** (`/dashboard`) — health, version, project count, MCP summary — Completed: 2026-03-26
 - [x] **Projects** list (`/projects`) with **create form**, **project detail** (surface + links), **hypotheses**, **findings**, **evidence** (`/projects/{id}/evidence`) — Completed: 2026-03-26
 - [x] Add surface inventory page (filters, export) — Completed: 2026-03-26 (see §4 surface UI)
-- [ ] Rich hypotheses queue (detail drawer, reject)
+- [x] Rich hypotheses queue (detail drawer; approve/reject in list + drawer) — Completed: 2026-03-26
 - [ ] Add evidence and findings page
 - [ ] Add learning metrics page
 - [ ] Add research curator page

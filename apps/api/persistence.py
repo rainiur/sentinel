@@ -164,7 +164,10 @@ def list_hypotheses_for_project(engine: Engine, project_id: UUID) -> list[dict]:
                 text(
                     """
                     SELECT id::text, title, bug_class, status,
-                           priority_score, confidence_score, created_at
+                           priority_score, confidence_score, created_at,
+                           rationale, supporting_evidence_json AS supporting_evidence,
+                           human_approval_required,
+                           proposed_template_id::text AS proposed_template_id
                     FROM hypotheses
                     WHERE project_id = :pid
                     ORDER BY created_at DESC
@@ -182,6 +185,11 @@ def list_hypotheses_for_project(engine: Engine, project_id: UUID) -> list[dict]:
             v = d.get(key)
             if v is not None:
                 d[key] = float(v)
+        ev = d.get("supporting_evidence")
+        if ev is None:
+            d["supporting_evidence"] = []
+        elif not isinstance(ev, list):
+            d["supporting_evidence"] = [ev]
         out.append(d)
     return out
 
